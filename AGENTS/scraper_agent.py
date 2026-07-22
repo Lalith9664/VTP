@@ -87,7 +87,7 @@ def safe_parse_json(llm_response: str) -> dict:
 # ---------------------------------------------------------------------------
 async def fetch_from_adzuna():
     """Primary source – Adzuna India job API.
-    Returns a list of dicts with keys: title, company, description.
+    Returns a list of dicts with keys: title, company, description, job_url.
     """
     if not ADZUNA_APP_ID or not ADZUNA_APP_KEY:
         logger.warning("Adzuna credentials missing – skipping Adzuna.")
@@ -111,6 +111,7 @@ async def fetch_from_adzuna():
                     "title": job.get("title", "Unknown Role"),
                     "company": job.get("company", {}).get("display_name", "Unknown Company"),
                     "description": f"{job.get('description', '')} {job.get('contract_time', '')} {job.get('salary_min', '')}",
+                    "job_url": job.get("redirect_url", ""),  # Direct link to apply on Adzuna
                 })
             return jobs
     except Exception as e:
@@ -125,7 +126,12 @@ async def fetch_from_arbeitnow():
             resp.raise_for_status()
             data = resp.json().get("data", [])
             return [
-                {"title": j.get("title"), "company": j.get("company_name"), "description": j.get("description")}
+                {
+                    "title": j.get("title"),
+                    "company": j.get("company_name"),
+                    "description": j.get("description"),
+                    "job_url": j.get("url", ""),  # Direct link to apply on Arbeitnow
+                }
                 for j in data[:15]
             ]
     except Exception as e:
@@ -146,42 +152,53 @@ async def scrape_and_enrich_jobs():
         logger.warning("All APIs failed – using mock jobs.")
         raw_jobs = MOCK_JOBS
 
-    logger.info(f"✅ Fetched {len(raw_jobs)} jobs. Beginning LangChain enrichment...")
-    saved = 0
-    for job in raw_jobs:
+    logger.info(f"✅ Fetched {len(raw_jobs)} jobs. Beginning parallel LangChain enrichment...")
+    
+    sem = asyncio.Semaphore(3)  # Limit concurrency to prevent Groq 429 rate limits
+
+    async def process_job(job):
         desc = job.get("description", "")
         if not desc or len(desc) < 50:
-            continue
-        try:
-            # 2️⃣ LangChain Groq extraction – strict JSON
-            prompt = (
-                "Extract a list of technical skills and a one‑sentence summary from the following job description. "
-                "Return STRICT JSON only, no markdown: {\"skills\": [\"skill1\", \"skill2\"], \"summary\": \"...\"}.\n"
-                f"Job Description: {desc[:3000]}"
-            )
-            response = await llm.ainvoke(prompt)
-            payload = safe_parse_json(response.content)
-            skills = payload.get("skills", [])
+            return False
+        async with sem:
+            try:
+                # 2️⃣ LangChain Groq extraction – strict JSON
+                prompt = (
+                    "Extract a list of technical skills and a one‑sentence summary from the following job description. "
+                    "Return STRICT JSON only, no markdown: {\"skills\": [\"skill1\", \"skill2\"], \"summary\": \"...\"}.\n"
+                    f"Job Description: {desc[:3000]}"
+                )
+                response = await llm.ainvoke(prompt)
+                payload = safe_parse_json(response.content)
+                skills = payload.get("skills", [])
 
-            # 3️⃣ Embedding
-            embedding = await get_embedding(desc[:2000])
+                # 3️⃣ Embedding
+                embedding = await get_embedding(desc[:2000])
 
-            # 4️⃣ Persist to Supabase (mock client works out‑of‑the‑box)
-            supabase.table("jobs").insert({
-                "title": job.get("title"),
-                "company": job.get("company"),
-                "description": desc,
-                "skills": skills,
-                "embedding": embedding,
-                "source": "Adzuna_India",
-                "is_scam": False,
-                "toxic_score": 0,
-            }).execute()
-            saved += 1
-            logger.info(f"✅ Saved: {job.get('title')} at {job.get('company')}")
-        except Exception as e:
-            logger.error(f"❌ Failed to process {job.get('title')}: {e}")
-            continue
+                # 4️⃣ Persist to Supabase (mock client works out‑of‑the‑box)
+                job_url = job.get("job_url", "")
+                await asyncio.to_thread(
+                    supabase.table("jobs").insert({
+                        "title": job.get("title"),
+                        "company": job.get("company"),
+                        "description": desc,
+                        "skills": skills,
+                        "embedding": embedding,
+                        "source": job_url or "mock",  # Store the actual apply URL as the source
+                        "is_scam": False,
+                        "toxic_score": 0,
+                    }).execute
+                )
+                logger.info(f"✅ Saved: {job.get('title')} at {job.get('company')}")
+                return True
+            except Exception as e:
+                logger.error(f"❌ Failed to process {job.get('title')}: {e}")
+                return False
+
+
+    # Process all fetched jobs in parallel
+    results = await asyncio.gather(*(process_job(job) for job in raw_jobs), return_exceptions=True)
+    saved = sum(1 for r in results if r is True)
 
     logger.info(f"🎉 Pipeline complete – saved {saved} jobs to Supabase.")
     return {"status": "success", "scraped_count": saved}
