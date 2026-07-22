@@ -1,0 +1,401 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #1E293B;
+  --surface: #F8FAFC;
+  --card-bg: #FFFFFF;
+  --sidebar-bg: #F1F5F9;
+  --header-bg: #FFFFFF;
+  --accent: #059669;
+  --accent-glow: rgba(5, 150, 105, 0.12);
+  
+  /* Neumorphic Shadows for Light Mode (White Color Palette) */
+  --neu-shadow-raised: 6px 6px 16px rgba(0, 0, 0, 0.035), -6px -6px 16px rgba(0, 0, 0, 0.005);
+  --neu-shadow-pressed: inset 4px 4px 8px rgba(0, 0, 0, 0.025);
+  --neu-shadow-hover: 10px 10px 20px rgba(0, 0, 0, 0.05), 0 0 12px rgba(5, 150, 105, 0.1);
+  --neu-border: 1px solid rgba(0, 0, 0, 0.045);
+}
+
+.dark {
+  --background: #0B1120;
+  --foreground: #F1F5F9;
+  --surface: #172033;
+  --card-bg: #1A2336;
+  --sidebar-bg: #0F172A;
+  --header-bg: #111827;
+  --accent: #34D399;
+  --accent-glow: rgba(52, 211, 153, 0.25);
+
+  /* Neumorphic Shadows for Dark Mode */
+  --neu-shadow-raised: 12px 12px 24px rgba(0, 0, 0, 0.45), -8px -8px 20px rgba(255, 255, 255, 0.025);
+  --neu-shadow-pressed: inset 6px 6px 12px rgba(0, 0, 0, 0.45), inset -6px -6px 12px rgba(255, 255, 255, 0.02);
+  --neu-shadow-hover: 16px 16px 32px rgba(0, 0, 0, 0.55), -10px -10px 24px rgba(255, 255, 255, 0.035), 0 0 20px rgba(52, 211, 153, 0.25);
+  --neu-border: 1px solid rgba(255, 255, 255, 0.015);
+}
+
+.violet-accent {
+  --accent: #10B981;
+  --accent-glow: rgba(16, 185, 129, 0.25);
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans), Inter, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-slow: pulse-slow 8s ease-in-out infinite;
+  --animate-spin-slow: spin-slow 20s linear infinite;
+  --animate-grid-move: grid-move 20s linear infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(0.5deg);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes grid-move {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 24px 24px;
+  }
+}
+
+/* Custom background patterns */
+.grid-pattern {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  animation: grid-move 50s linear infinite;
+}
+
+/* ----------------------------------------------------
+   NEUMORPHISM STYLE LIBRARY & OVERRIDES SYSTEM
+   ---------------------------------------------------- */
+
+body {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.neu-bg {
+  background-color: var(--background) !important;
+  transition: background-color 0.3s ease;
+}
+
+.neu-sidebar-bg {
+  background-color: var(--sidebar-bg) !important;
+  transition: background-color 0.3s ease;
+}
+
+.neu-header-bg {
+  background-color: var(--header-bg) !important;
+  transition: background-color 0.3s ease;
+}
+
+/* Standard Elevated Card */
+.neu-card {
+  background-color: var(--card-bg);
+  border: var(--neu-border);
+  box-shadow: var(--neu-shadow-raised);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card Hover effect: lift, shadow depth change, accent glow */
+.neu-card-hover:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: var(--neu-shadow-hover);
+  border-color: var(--accent);
+}
+
+/* Pressed Surface: Inset Shadow */
+.neu-pressed {
+  background-color: var(--surface);
+  border: var(--neu-border);
+  box-shadow: var(--neu-shadow-pressed);
+  transition: all 0.3s ease-in-out;
+}
+
+/* Neumorphic Input: Inset Shadow, focus accent glow */
+.neu-input {
+  background-color: var(--surface);
+  border: var(--neu-border);
+  box-shadow: var(--neu-shadow-pressed);
+  color: var(--foreground);
+  transition: all 0.2s ease-in-out;
+}
+
+.neu-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 
+    var(--neu-shadow-pressed),
+    0 0 10px var(--accent-glow);
+}
+
+/* Neumorphic Button */
+.neu-button {
+  background-color: var(--card-bg);
+  border: var(--neu-border);
+  box-shadow: var(--neu-shadow-raised);
+  color: var(--foreground);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neu-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--neu-shadow-hover);
+}
+
+.neu-button:active {
+  transform: translateY(1px);
+  box-shadow: var(--neu-shadow-pressed);
+}
+
+/* Circle / Knob extrusion */
+.neu-circle {
+  background-color: var(--card-bg);
+  border: var(--neu-border);
+  box-shadow: var(--neu-shadow-raised);
+}
+
+/* ----------------------------------------------------
+   AUTOMATED SELECTOR OVERRIDES FOR LIGHT/DARK NEUMORPHISM
+   ---------------------------------------------------- */
+
+/* Make every white card automatically a Neumorphic Card */
+.bg-white {
+  background-color: var(--card-bg) !important;
+  border: var(--neu-border) !important;
+  box-shadow: var(--neu-shadow-raised) !important;
+  border-radius: 22px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Add hover lift and glow to interactive white cards */
+.bg-white.hover\:border-slate-350:hover,
+.neu-card-hover:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: var(--neu-shadow-hover) !important;
+  border-color: var(--accent) !important;
+}
+
+/* Make semi-transparent white items inset neumorphic containers */
+.bg-white\/50 {
+  background-color: var(--surface) !important;
+  border: var(--neu-border) !important;
+  box-shadow: var(--neu-shadow-pressed) !important;
+  border-radius: 16px;
+}
+
+/* Convert glass inputs to neumorphic inset fields */
+.glass-input {
+  background-color: var(--surface) !important;
+  border: var(--neu-border) !important;
+  box-shadow: var(--neu-shadow-pressed) !important;
+  color: var(--foreground) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: var(--neu-shadow-pressed), 0 0 10px var(--accent-glow) !important;
+}
+
+/* Handle light-grey elements to become light surface insets */
+.bg-slate-50 {
+  background-color: var(--surface) !important;
+}
+
+/* Force all slate text classes to render as pure white in dark mode for maximum legibility */
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-750,
+.dark .text-slate-700,
+.dark .text-slate-650,
+.dark .text-slate-600,
+.dark .text-slate-550,
+.dark .text-slate-500,
+.dark .text-slate-455,
+.dark .text-slate-450,
+.dark .text-slate-400,
+.dark .text-slate-350,
+.dark .text-slate-300,
+.dark .text-slate-250,
+.dark .text-slate-200 {
+  color: #FFFFFF !important;
+}
+
+/* Force light-slate classes to render as dark slate text in light mode for readability */
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-slate-250,
+html:not(.dark) .text-slate-300,
+html:not(.dark) .text-slate-350 {
+  color: #1E293B !important;
+}
+
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-slate-450,
+html:not(.dark) .text-slate-455 {
+  color: #576071 !important;
+}
+
+/* High contrast active navigation color in light mode */
+.neu-pressed.text-teal-400 {
+  color: var(--accent) !important;
+}
+
+/* Borders mapping */
+.border-slate-200\/60,
+.border-slate-200,
+.border-slate-100 {
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.dark .border-slate-200\/60,
+.dark .border-slate-200,
+.dark .border-slate-100 {
+  border-color: rgba(255, 255, 255, 0.015) !important;
+}
+
+/* Status indicator badge colors overrides in dark mode */
+.dark .bg-teal-50, 
+.dark .bg-teal-50\/70 {
+  background-color: rgba(20, 184, 166, 0.1) !important;
+  color: #2DD4BF !important;
+  border-color: rgba(20, 184, 166, 0.2) !important;
+}
+
+.dark .bg-teal-50, 
+.dark .bg-teal-50\/30 {
+  background-color: rgba(56, 189, 248, 0.1) !important;
+  color: #38BDF8 !important;
+  border-color: rgba(56, 189, 248, 0.2) !important;
+}
+
+.dark .bg-rose-50\/45,
+.dark .bg-rose-50\/40 {
+  background-color: rgba(244, 63, 94, 0.1) !important;
+  color: #FB7185 !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+/* Skip active buttons and white knobs in bg overrides */
+.dark .dark\:bg-slate-800 {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+}
+
+.dark .dark\:bg-white {
+  background-color: #FFFFFF !important;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Scanning laser effects */
+@keyframes scan {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 100%;
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+.laser-beam {
+  animation: scan 4s ease-in-out infinite;
+}
+
+body {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* ----------------------------------------------------
+   LIGHT MODE HIGH-CONTRAST CONTRAST OVERRIDES
+   ---------------------------------------------------- */
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-150,
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-slate-250,
+html:not(.dark) .text-slate-300,
+html:not(.dark) .text-slate-350,
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-slate-450,
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-slate-600,
+html:not(.dark) .text-slate-700,
+html:not(.dark) .text-slate-800,
+html:not(.dark) .text-slate-900,
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) p,
+html:not(.dark) a,
+html:not(.dark) span {
+  color: #0F172A !important; /* Rich charcoal black */
+}
+
+/* Retain gradient text clip colors */
+html:not(.dark) .text-transparent {
+  color: transparent !important;
+}
+
+/* Retain green accent variables */
+html:not(.dark) .text-teal-400,
+html:not(.dark) .text-teal-500,
+html:not(.dark) .text-teal-600,
+html:not(.dark) .text-emerald-500 {
+  color: var(--accent) !important;
+}
+
