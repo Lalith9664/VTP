@@ -7,15 +7,15 @@
   --foreground: #1E293B;
   --surface: #F8FAFC;
   --card-bg: #FFFFFF;
-  --sidebar-bg: #FFFFFF;
+  --sidebar-bg: #F1F5F9;
   --header-bg: #FFFFFF;
-  --accent: #4F46E5;
-  --accent-glow: rgba(79, 70, 229, 0.12);
+  --accent: #059669;
+  --accent-glow: rgba(5, 150, 105, 0.12);
   
   /* Neumorphic Shadows for Light Mode (White Color Palette) */
   --neu-shadow-raised: 6px 6px 16px rgba(0, 0, 0, 0.035), -6px -6px 16px rgba(0, 0, 0, 0.005);
   --neu-shadow-pressed: inset 4px 4px 8px rgba(0, 0, 0, 0.025);
-  --neu-shadow-hover: 10px 10px 20px rgba(0, 0, 0, 0.05), 0 0 12px rgba(79, 70, 229, 0.1);
+  --neu-shadow-hover: 10px 10px 20px rgba(0, 0, 0, 0.05), 0 0 12px rgba(5, 150, 105, 0.1);
   --neu-border: 1px solid rgba(0, 0, 0, 0.045);
 }
 
@@ -26,19 +26,19 @@
   --card-bg: #1A2336;
   --sidebar-bg: #0F172A;
   --header-bg: #111827;
-  --accent: #38BDF8;
-  --accent-glow: rgba(56, 189, 248, 0.25);
+  --accent: #34D399;
+  --accent-glow: rgba(52, 211, 153, 0.25);
 
   /* Neumorphic Shadows for Dark Mode */
   --neu-shadow-raised: 12px 12px 24px rgba(0, 0, 0, 0.45), -8px -8px 20px rgba(255, 255, 255, 0.025);
   --neu-shadow-pressed: inset 6px 6px 12px rgba(0, 0, 0, 0.45), inset -6px -6px 12px rgba(255, 255, 255, 0.02);
-  --neu-shadow-hover: 16px 16px 32px rgba(0, 0, 0, 0.55), -10px -10px 24px rgba(255, 255, 255, 0.035), 0 0 20px rgba(56, 189, 248, 0.25);
+  --neu-shadow-hover: 16px 16px 32px rgba(0, 0, 0, 0.55), -10px -10px 24px rgba(255, 255, 255, 0.035), 0 0 20px rgba(52, 211, 153, 0.25);
   --neu-border: 1px solid rgba(255, 255, 255, 0.015);
 }
 
 .violet-accent {
-  --accent: #818CF8;
-  --accent-glow: rgba(129, 140, 248, 0.25);
+  --accent: #10B981;
+  --accent-glow: rgba(16, 185, 129, 0.25);
 }
 
 @theme {
@@ -264,7 +264,7 @@ html:not(.dark) .text-slate-455 {
 }
 
 /* High contrast active navigation color in light mode */
-.neu-pressed.text-sky-400 {
+.neu-pressed.text-teal-400 {
   color: var(--accent) !important;
 }
 
@@ -289,8 +289,8 @@ html:not(.dark) .text-slate-455 {
   border-color: rgba(20, 184, 166, 0.2) !important;
 }
 
-.dark .bg-indigo-50, 
-.dark .bg-indigo-50\/30 {
+.dark .bg-teal-50, 
+.dark .bg-teal-50\/30 {
   background-color: rgba(56, 189, 248, 0.1) !important;
   color: #38BDF8 !important;
   border-color: rgba(56, 189, 248, 0.2) !important;
@@ -359,3 +359,43 @@ html:not(.dark) .text-slate-455 {
 body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
+
+/* ----------------------------------------------------
+   LIGHT MODE HIGH-CONTRAST CONTRAST OVERRIDES
+   ---------------------------------------------------- */
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-150,
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-slate-250,
+html:not(.dark) .text-slate-300,
+html:not(.dark) .text-slate-350,
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-slate-450,
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-slate-600,
+html:not(.dark) .text-slate-700,
+html:not(.dark) .text-slate-800,
+html:not(.dark) .text-slate-900,
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) p,
+html:not(.dark) a,
+html:not(.dark) span {
+  color: #0F172A !important; /* Rich charcoal black */
+}
+
+/* Retain gradient text clip colors */
+html:not(.dark) .text-transparent {
+  color: transparent !important;
+}
+
+/* Retain green accent variables */
+html:not(.dark) .text-teal-400,
+html:not(.dark) .text-teal-500,
+html:not(.dark) .text-teal-600,
+html:not(.dark) .text-emerald-500 {
+  color: var(--accent) !important;
+}
+

@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Lazy singleton — only initialised on first use so static builds
+// Lazy singleton — only initialized on first use so static builds
 // succeed even when the env vars are not yet set.
 let _supabase: SupabaseClient | null = null;
 

@@ -12,7 +12,7 @@ import { useSession } from "@/store/SessionContext";
 
 export default function LandingPage() {
   const router = useRouter();
-  const { theme } = useSession();
+  const { theme, toggleTheme } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
@@ -37,7 +37,7 @@ export default function LandingPage() {
       role: "Software Engineer at Stripe",
       college: "BITS Pilani",
       image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&h=150&fit=crop",
-      text: "AuraJobs analyzed my GitHub projects, detected my missing skills, and matched me with Stripe. The automated learning planner helped me clear the interviews in 3 weeks!"
+      text: "VTP analyzed my GitHub projects, detected my missing skills, and matched me with Stripe. The automated learning planner helped me clear the interviews in 3 weeks!"
     },
     {
       name: "Kabir Mehta",
@@ -51,13 +51,13 @@ export default function LandingPage() {
       role: "Cloud Engineer at Amazon",
       college: "NIT Trichy",
       image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&h=150&fit=crop",
-      text: "The Anti-Matching section was a game changer. Instead of getting rejected for DevOps roles, AuraJobs showed me exactly what Docker/AWS skills I was missing and how to learn them."
+      text: "The Anti-Matching section was a game changer. Instead of getting rejected for DevOps roles, VTP showed me exactly what Docker/AWS skills I was missing and how to learn them."
     }
   ];
 
   const agentSteps = [
-    { id: 1, title: "Agent 1", subtitle: "Collecting Jobs", desc: "Crawling thousands of platforms", icon: <Briefcase className="w-5 h-5 text-sky-400" />, progress: 100 },
-    { id: 2, title: "Agent 2", subtitle: "Understanding Jobs", desc: "Extracting skills and requirements", icon: <Cpu className="w-5 h-5 text-indigo-400" />, progress: 100 },
+    { id: 1, title: "Agent 1", subtitle: "Collecting Jobs", desc: "Crawling thousands of platforms", icon: <Briefcase className="w-5 h-5 text-teal-400" />, progress: 100 },
+    { id: 2, title: "Agent 2", subtitle: "Understanding Jobs", desc: "Extracting skills and requirements", icon: <Cpu className="w-5 h-5 text-teal-400" />, progress: 100 },
     { id: 3, title: "Agent 3", subtitle: "Analyzing Resume", desc: "Mapping skills and experience", icon: <FileText className="w-5 h-5 text-purple-400" />, progress: 100 },
     { id: 4, title: "Agent 4", subtitle: "Matching Jobs", desc: "Calculating score & generating roadmap", icon: <Target className="w-5 h-5 text-teal-400" />, progress: 75 }
   ];
@@ -66,7 +66,7 @@ export default function LandingPage() {
     <div className="flex-1 w-full neu-bg relative overflow-hidden font-sans select-none text-slate-100">
       
       {/* Background Blobs and Rays */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[60%] rounded-full bg-sky-500/10 blur-[130px] pointer-events-none animate-pulse-slow" />
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[60%] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none animate-pulse-slow" />
       <div className="absolute top-[20%] right-[-10%] w-[45%] h-[55%] rounded-full bg-purple-500/5 blur-[130px] pointer-events-none animate-pulse-slow" />
       <div className="absolute bottom-[-10%] left-[20%] w-[50%] h-[50%] rounded-full bg-cyan-500/10 blur-[120px] pointer-events-none" />
 
@@ -74,26 +74,51 @@ export default function LandingPage() {
       <div className="absolute inset-0 grid-pattern pointer-events-none opacity-40" />
 
       {/* Header / Navbar */}
-      <header className="sticky top-0 z-50 w-full neu-header-bg border-b border-slate-200/60 shadow-md shadow-black/10">
-        <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
+      <header className="sticky top-0 z-50 w-full neu-header-bg shadow-md shadow-black/10">
+        <div className="w-full px-6 lg:px-16 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold shadow-md shadow-sky-500/10 neu-circle border-none">
-              A
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-slate-50 to-slate-200 bg-clip-text text-transparent">
-              AuraJobs
+            <img src="/logo.jpeg" alt="VTP Logo" className="w-12 h-12 rounded-xl object-cover shadow-md border-none neu-circle" />
+            <span className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              VTP
             </span>
           </div>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-400">
-            <a href="#features" className="hover:text-sky-400 transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-sky-400 transition-colors">How It Works</a>
-            <a href="#statistics" className="hover:text-sky-400 transition-colors">Stats</a>
-            <a href="#testimonials" className="hover:text-sky-400 transition-colors">Success Stories</a>
+            <a href="#features" className="hover:text-teal-400 transition-colors">Features</a>
+            <a href="#how-it-works" className="hover:text-teal-400 transition-colors">How It Works</a>
+            <a href="#statistics" className="hover:text-teal-400 transition-colors">Stats</a>
+            <a href="#testimonials" className="hover:text-teal-400 transition-colors">Success Stories</a>
           </nav>
 
+          {/* Actions */}
           <div className="hidden md:flex items-center gap-4">
+            {/* Dark/Light Mode Toggle Switch */}
+            <div className="flex items-center gap-2 mr-2">
+              <button
+                onClick={toggleTheme}
+                className="w-16 h-8.5 rounded-full relative transition-colors duration-300 flex items-center px-0.5 focus:outline-none cursor-pointer border-none bg-slate-150 dark:bg-slate-900/60 neu-pressed"
+                aria-label="Toggle Theme Mode"
+              >
+                {/* Left Indicator (circular ring outline) */}
+                <div className="absolute left-2.5 w-3 h-3 rounded-full border-2 border-slate-700 dark:border-slate-500 opacity-80" />
+                
+                {/* Right Indicator (glowing horizontal white line) */}
+                <div 
+                  className="absolute right-3.5 w-3.5 h-0.5 rounded-full opacity-100 z-0" 
+                  style={{ backgroundColor: "#ffffff", boxShadow: "0 0 8px #ffffff" }}
+                />
+
+                {/* Sliding Knob */}
+                <motion.div
+                  layout
+                  className="w-7.5 h-7.5 rounded-full border-none shadow-md cursor-pointer bg-white dark:bg-slate-300 z-10"
+                  animate={{ x: theme === "dark" ? 0 : 30 }}
+                  transition={{ duration: 0.1, ease: "easeOut" }}
+                />
+              </button>
+            </div>
+
             <Link 
               href="/login"
               className="px-5 py-2.5 rounded-xl text-xs font-bold neu-button transition-all text-slate-300"
@@ -102,7 +127,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/login"
-              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-md shadow-sky-500/10 hover:translate-y-[-1px] transition-all flex items-center gap-2 cursor-pointer border border-sky-400/20"
+              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md shadow-teal-500/10 hover:translate-y-[-1px] transition-all flex items-center gap-2 cursor-pointer border border-teal-400/20"
             >
               Get Started <ArrowRight className="w-4 h-4" />
             </Link>
@@ -163,7 +188,7 @@ export default function LandingPage() {
                 </Link>
                 <Link 
                   href="/login"
-                  className="w-full text-center py-3 bg-gradient-to-r from-sky-500 to-indigo-500 text-white rounded-xl font-bold border border-sky-400/20 shadow-md"
+                  className="w-full text-center py-3 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl font-bold border border-teal-400/20 shadow-md"
                 >
                   Get Started
                 </Link>
@@ -174,18 +199,18 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 pt-16 pb-24 md:py-32 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+      <section className="w-full px-6 lg:px-16 pt-16 pb-24 md:py-32 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
         
         {/* Left Hero */}
         <div className="lg:col-span-7 flex flex-col items-start gap-8 z-10 text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#172033] border border-slate-800 text-sky-400 text-xs font-bold neu-card">
-            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#172033] border border-slate-800 text-teal-400 text-xs font-bold neu-card">
+            <Sparkles className="w-3.5 h-3.5 text-teal-400" />
             AI-Powered Multi-Agent Automation
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-100 leading-[1.12]">
             Find Your Dream Job Powered by{" "}
-            <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-teal-400 to-emerald-400 bg-clip-text text-transparent">
               Multi-Agent AI
             </span>
           </h1>
@@ -197,18 +222,11 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto mt-2">
             <Link
               href="/login"
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 text-white font-bold shadow-lg shadow-sky-500/10 hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-2 group cursor-pointer border border-sky-400/20"
+              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-bold shadow-lg shadow-teal-500/10 hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-2 group cursor-pointer border border-teal-400/20"
             >
               Get Started 
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <button
-              onClick={() => router.push("/login")}
-              className="px-8 py-4 rounded-2xl neu-button text-slate-300 font-bold transition-all text-center flex items-center justify-center gap-2 cursor-pointer border-none"
-            >
-              <Play className="w-4 h-4 text-sky-400 fill-sky-400" />
-              Watch Demo
-            </button>
           </div>
         </div>
 
@@ -233,14 +251,13 @@ export default function LandingPage() {
 
                 <div className="flex-1 text-left">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider">{agent.title}</span>
                     {agent.progress === 100 ? (
                       <span className="inline-flex items-center gap-1 text-[9px] font-bold text-teal-400 bg-teal-950/20 px-2 py-0.5 rounded-full border border-teal-800/40">
                         Done
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 text-[9px] font-bold text-sky-400 bg-sky-950/20 px-2 py-0.5 rounded-full border border-sky-800/40">
-                        <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping" /> Analyzing
+                      <span className="inline-flex items-center gap-1.5 text-[9px] font-bold text-teal-400 bg-sky-950/20 px-2 py-0.5 rounded-full border border-sky-800/40">
+                        <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping" /> Analyzing
                       </span>
                     )}
                   </div>
@@ -250,7 +267,7 @@ export default function LandingPage() {
                   {/* Progress Line */}
                   <div className="w-full h-1 rounded-full mt-3 overflow-hidden neu-pressed border-none">
                     <div 
-                      className="bg-gradient-to-r from-sky-400 to-indigo-500 h-full rounded-full transition-all duration-1000"
+                      className="bg-gradient-to-r from-teal-400 to-emerald-500 h-full rounded-full transition-all duration-1000"
                       style={{ width: `${agent.progress}%` }}
                     />
                   </div>
@@ -259,7 +276,7 @@ export default function LandingPage() {
                 {/* Pulsing Connective Dots */}
                 {index < agentSteps.length - 1 && (
                   <div className="absolute bottom-[-24px] left-[34px] w-0.5 h-6 bg-gradient-to-b from-indigo-500 to-[#111827] flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-sky-400/80 animate-ping" />
+                    <div className="w-2 h-2 rounded-full bg-teal-400/80 animate-ping" />
                   </div>
                 )}
               </motion.div>
@@ -269,9 +286,9 @@ export default function LandingPage() {
       </section>
 
       {/* Feature Section */}
-      <section id="features" className="max-w-7xl mx-auto px-6 py-24 border-t border-[#111827] relative z-10">
+      <section id="features" className="w-full px-6 lg:px-16 py-24 relative z-10">
         <div className="text-center max-w-2xl mx-auto mb-16 flex flex-col items-center">
-          <div className="px-3 py-1.5 rounded-full bg-[#172033] border border-slate-800 text-sky-400 text-xs font-bold mb-4 neu-card">
+          <div className="px-3 py-1.5 rounded-full bg-[#172033] border border-slate-800 text-teal-400 text-xs font-bold mb-4 neu-card">
             Powerful Automation Capabilities
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-slate-100 leading-tight">
@@ -288,12 +305,12 @@ export default function LandingPage() {
             {
               title: "AI Job Collection",
               desc: "Simultaneous background crawlers scanning over 40+ platforms for student-friendly roles.",
-              icon: <Briefcase className="w-6 h-6 text-sky-400" />
+              icon: <Briefcase className="w-6 h-6 text-teal-400" />
             },
             {
               title: "Resume Intelligence",
               desc: "AuraParser understands deep context, projects, research work, and maps them to job parameters.",
-              icon: <FileText className="w-6 h-6 text-indigo-400" />
+              icon: <FileText className="w-6 h-6 text-teal-400" />
             },
             {
               title: "Multi-Agent AI",
@@ -323,7 +340,7 @@ export default function LandingPage() {
             {
               title: "AI Career Assistant",
               desc: "Talk to our simulated career coach on details of company-specific expectations.",
-              icon: <Sparkles className="w-6 h-6 text-sky-400" />
+              icon: <Sparkles className="w-6 h-6 text-teal-400" />
             }
           ].map((feat, idx) => (
             <motion.div
@@ -345,9 +362,9 @@ export default function LandingPage() {
       </section>
 
       {/* How it Works Section */}
-      <section id="how-it-works" className="max-w-7xl mx-auto px-6 py-24 border-t border-[#111827] relative z-10">
+      <section id="how-it-works" className="w-full px-6 lg:px-16 py-24 relative z-10">
         <div className="text-center max-w-2xl mx-auto mb-20 flex flex-col items-center">
-          <div className="px-3 py-1.5 rounded-full bg-[#172033] border border-slate-800 text-sky-400 text-xs font-bold mb-4 neu-card">
+          <div className="px-3 py-1.5 rounded-full bg-[#172033] border border-slate-800 text-teal-400 text-xs font-bold mb-4 neu-card">
             Workflow Transparency
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-slate-100 leading-tight">
@@ -362,7 +379,7 @@ export default function LandingPage() {
         <div className="relative max-w-5xl mx-auto flex flex-col gap-12 lg:flex-row lg:justify-between lg:gap-6">
           
           {/* Horizontal Line for Large Screens */}
-          <div className="hidden lg:block absolute top-[40px] left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-sky-500 to-indigo-500 opacity-20 pointer-events-none" />
+          <div className="hidden lg:block absolute top-[40px] left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-teal-500 to-emerald-500 opacity-20 pointer-events-none" />
 
           {[
             { step: "01", title: "Collect Jobs", desc: "Agents monitor API endpoints, job sites, and social platforms, parsing fresher vacancies in real-time." },
@@ -378,7 +395,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: idx * 0.15 }}
               className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left relative z-10 px-4"
             >
-              <div className="w-20 h-20 rounded-3xl text-sky-400 flex items-center justify-center text-2xl font-black mb-6 neu-circle border-none">
+              <div className="w-20 h-20 rounded-3xl text-teal-400 flex items-center justify-center text-2xl font-black mb-6 neu-circle border-none">
                 {item.step}
               </div>
               <h3 className="font-bold text-slate-100 text-base mb-2">{item.title}</h3>
@@ -386,7 +403,7 @@ export default function LandingPage() {
 
               {/* Vertical connector for mobile */}
               {idx < 3 && (
-                <div className="lg:hidden w-0.5 h-12 bg-sky-500/20 my-4" />
+                <div className="lg:hidden w-0.5 h-12 bg-teal-500/20 my-4" />
               )}
             </motion.div>
           ))}
@@ -394,7 +411,7 @@ export default function LandingPage() {
       </section>
 
       {/* Statistics Section */}
-      <section id="statistics" className="max-w-7xl mx-auto px-6 py-20 border-t border-[#111827] relative z-10">
+      <section id="statistics" className="w-full px-6 lg:px-16 py-20 relative z-10">
         <div className="neu-card rounded-3xl p-10 md:p-16 flex flex-col md:flex-row md:items-center justify-around gap-12 text-center border-none">
           {[
             { target: stats.jobs, suffix: "+", label: "Jobs Collected" },
@@ -403,7 +420,7 @@ export default function LandingPage() {
             { target: stats.domains, suffix: "+", label: "Career Domains" }
           ].map((stat, idx) => (
             <div key={idx} className="flex flex-col gap-2">
-              <span className="text-4xl md:text-5xl font-black text-sky-400 tracking-tight">
+              <span className="text-4xl md:text-5xl font-black text-teal-400 tracking-tight">
                 {stat.target.toLocaleString()}{stat.suffix}
               </span>
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -415,9 +432,9 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials (Carousel) */}
-      <section id="testimonials" className="max-w-7xl mx-auto px-6 py-24 border-t border-[#111827] relative z-10">
+      <section id="testimonials" className="w-full px-6 lg:px-16 py-24 relative z-10">
         <div className="text-center max-w-2xl mx-auto mb-16 flex flex-col items-center">
-          <div className="px-3 py-1.5 rounded-full bg-[#172033] border border-slate-800 text-sky-400 text-xs font-bold mb-4 neu-card">
+          <div className="px-3 py-1.5 rounded-full bg-[#172033] border border-slate-800 text-teal-400 text-xs font-bold mb-4 neu-card">
             Success Stories
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-slate-100 leading-tight">
@@ -442,7 +459,7 @@ export default function LandingPage() {
               />
               <div>
                 <h4 className="font-bold text-slate-100 text-sm leading-tight">{testimonials[activeTestimonial].name}</h4>
-                <p className="text-[11px] text-sky-400 font-bold mt-0.5">{testimonials[activeTestimonial].role}</p>
+                <p className="text-[11px] text-teal-400 font-bold mt-0.5">{testimonials[activeTestimonial].role}</p>
                 <p className="text-[10px] text-slate-500 font-semibold">{testimonials[activeTestimonial].college}</p>
               </div>
             </div>
@@ -454,56 +471,54 @@ export default function LandingPage() {
               <button
                 key={idx}
                 onClick={() => setActiveTestimonial(idx)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === activeTestimonial ? "w-6 bg-sky-400" : "bg-slate-700 hover:bg-slate-600"}`}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === activeTestimonial ? "w-6 bg-teal-400" : "bg-slate-700 hover:bg-slate-600"}`}
               />
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="neu-sidebar-bg border-t border-slate-200/60 relative z-10">
-        <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-12 gap-12">
+      <footer className="neu-sidebar-bg relative z-10">
+        <div className="w-full px-6 lg:px-16 py-16 grid grid-cols-1 md:grid-cols-12 gap-12">
           
           {/* Logo & Info */}
           <div className="md:col-span-4 flex flex-col items-start gap-4 text-left">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold">
-                A
-              </div>
+              <img src="/logo.jpeg" alt="VTP Logo" className="w-12 h-12 rounded-lg object-cover shadow-md" />
               <span className="text-lg font-bold text-slate-200">
-                AuraJobs
+                VTP
               </span>
             </div>
             <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
               Next-generation multi-agent recruitment automation. Mapping fresher capabilities to modern cloud tech sectors.
             </p>
             <span className="text-[10px] text-slate-500 mt-2 font-bold">
-              © 2026 AuraJobs Technologies Inc. All rights reserved.
+              © 2026 VTP Technologies Inc. All rights reserved.
             </span>
           </div>
 
           {/* Quick Links */}
           <div className="md:col-span-3 flex flex-col items-start gap-3 text-left">
             <h4 className="font-bold text-slate-200 text-xs uppercase tracking-widest">Product</h4>
-            <a href="#features" className="text-slate-400 hover:text-sky-400 text-xs transition-colors">Features</a>
-            <a href="#how-it-works" className="text-slate-400 hover:text-sky-400 text-xs transition-colors">Workflow</a>
-            <a href="#statistics" className="text-slate-400 hover:text-sky-400 text-xs transition-colors">Case Studies</a>
+            <a href="#features" className="text-slate-400 hover:text-teal-400 text-xs transition-colors">Features</a>
+            <a href="#how-it-works" className="text-slate-400 hover:text-teal-400 text-xs transition-colors">Workflow</a>
+            <a href="#statistics" className="text-slate-400 hover:text-teal-400 text-xs transition-colors">Case Studies</a>
           </div>
 
           {/* Resources */}
           <div className="md:col-span-3 flex flex-col items-start gap-3 text-left">
             <h4 className="font-bold text-slate-200 text-xs uppercase tracking-widest">Resources</h4>
-            <span className="text-slate-400 hover:text-sky-400 text-xs transition-colors cursor-pointer">Documentation</span>
-            <span className="text-slate-400 hover:text-sky-400 text-xs transition-colors cursor-pointer">API Integration</span>
-            <span className="text-slate-400 hover:text-sky-400 text-xs transition-colors cursor-pointer">Developer SDKs</span>
+            <span className="text-slate-400 hover:text-teal-400 text-xs transition-colors cursor-pointer">Documentation</span>
+            <span className="text-slate-400 hover:text-teal-400 text-xs transition-colors cursor-pointer">API Integration</span>
+            <span className="text-slate-400 hover:text-teal-400 text-xs transition-colors cursor-pointer">Developer SDKs</span>
           </div>
 
           {/* Contact */}
           <div className="md:col-span-2 flex flex-col items-start gap-3 text-left">
             <h4 className="font-bold text-slate-200 text-xs uppercase tracking-widest">Company</h4>
-            <span className="text-slate-400 hover:text-sky-400 text-xs transition-colors cursor-pointer">About Us</span>
-            <span className="text-slate-400 hover:text-sky-400 text-xs transition-colors cursor-pointer">Contact Support</span>
-            <span className="text-slate-400 hover:text-sky-400 text-xs transition-colors cursor-pointer">Privacy Policy</span>
+            <span className="text-slate-400 hover:text-teal-400 text-xs transition-colors cursor-pointer">About Us</span>
+            <span className="text-slate-400 hover:text-teal-400 text-xs transition-colors cursor-pointer">Contact Support</span>
+            <span className="text-slate-400 hover:text-teal-400 text-xs transition-colors cursor-pointer">Privacy Policy</span>
           </div>
         </div>
       </footer>

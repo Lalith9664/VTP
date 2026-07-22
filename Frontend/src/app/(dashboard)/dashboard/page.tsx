@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession, Job, AntiJob, TrendingSkill } from "@/store/SessionContext";
-import { ThoughtStream } from "@/components/ThoughtStream";
+
 
 // Recharts components imports
 import { 
@@ -28,7 +28,8 @@ export default function DashboardPage() {
     uploadedFile, setUploadedFile, resumeScore,
     theme, toggleTheme, activeTab, setActiveTab,
     notifications, markNotificationRead, clearNotifications,
-    jobs, antiJobs, trendingSkills, goalData, analyzeGoal
+    jobs, antiJobs, trendingSkills, goalData, analyzeGoal,
+    sidebarCollapsed, setSidebarCollapsed
   } = useSession();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -81,15 +82,15 @@ export default function DashboardPage() {
   const handleAnalyzeGoal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!dreamInput.trim()) {
-      toast.warning("Please enter a role or company.");
+      toast.warning("Please enter a technology or skill name.");
       return;
     }
     setPlanningActive(true);
-    toast.loading("Orchestrating Agent 3 & 4 matching matrix...", { id: "planning" });
+    toast.loading("Analyzing prerequisites and compiling learning roadmap...", { id: "planning" });
     setTimeout(() => {
       analyzeGoal(dreamInput);
       setPlanningActive(false);
-      toast.success("Custom career blueprint compiled!", { id: "planning" });
+      toast.success("Custom skill roadmap compiled successfully!", { id: "planning" });
     }, 1800);
   };
 
@@ -151,32 +152,56 @@ export default function DashboardPage() {
     <div className="flex-1 min-h-screen flex neu-bg font-sans relative select-none text-slate-100 transition-colors duration-300">
       
       {/* Background radial overlays */}
-      <div className="absolute top-0 right-0 w-[45%] h-[40%] rounded-full bg-gradient-to-br from-sky-500/5 to-indigo-500/5 blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[45%] h-[40%] rounded-full bg-gradient-to-br from-teal-500/5 to-emerald-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[40%] h-[40%] rounded-full bg-gradient-to-tr from-purple-500/5 to-teal-500/5 blur-[130px] pointer-events-none" />
 
       {/* SIDEBAR NAVIGATION (Desktop) */}
-      <aside className="hidden lg:flex flex-col w-64 h-screen fixed left-0 top-0 neu-sidebar-bg border-r border-slate-200/60 p-6 gap-8 z-30 shadow-2xl">
+      <aside className={`hidden lg:flex flex-col h-screen fixed left-0 top-0 neu-sidebar-bg border-r border-slate-200/60 gap-8 z-30 shadow-2xl transition-all duration-300 ${sidebarCollapsed ? "w-20 p-4" : "w-64 p-6"}`}>
         
         {/* Logo Header */}
-        <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold bg-gradient-to-tr ${theme === "light" ? "from-sky-500 to-indigo-500" : "from-indigo-600 to-purple-600"} shadow-md border-none neu-circle`}>
-            A
-          </div>
-          <span className="text-lg font-bold text-slate-200">AuraJobs</span>
+        <div 
+          className={`flex items-center gap-3 cursor-pointer select-none ${sidebarCollapsed ? "justify-center" : ""}`}
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          <img src="/logo.jpeg" alt="VTP Logo" className="w-12 h-12 rounded-xl object-cover shadow-md border-none neu-circle transition-all duration-300" />
+          {!sidebarCollapsed && <span className="text-lg font-bold text-slate-200">VTP</span>}
         </div>
 
         {/* User Quick Info */}
-        <div className="flex items-center gap-3 p-3 rounded-2xl border-none neu-pressed">
-          <img 
-            src={profile.profilePic} 
-            alt="Profile Avatar" 
-            className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
-          />
-          <div className="min-w-0 flex-1 text-left">
-            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{profile.fullName}</h4>
-            <span className="text-[10px] text-slate-400 dark:text-slate-400 font-semibold">{profile.degree} • {profile.department.split(" ")[0]}</span>
+        {!sidebarCollapsed ? (
+          <div className="flex items-center gap-3 p-3 rounded-2xl border-none neu-pressed">
+            {profile.profilePic ? (
+              <img 
+                src={profile.profilePic} 
+                alt="Profile Avatar" 
+                className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-500 to-emerald-500 text-white font-black flex items-center justify-center text-sm border border-teal-400/20 neu-circle shadow-inner">
+                {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : "?"}
+              </div>
+            )}
+            <div className="min-w-0 flex-1 text-left">
+              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{profile.fullName}</h4>
+              <span className="text-[10px] text-slate-400 dark:text-slate-400 font-semibold">{profile.degree} • {profile.department.split(" ")[0]}</span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-center p-2 rounded-2xl border-none neu-pressed" title={profile.fullName}>
+            {profile.profilePic ? (
+              <img 
+                src={profile.profilePic} 
+                alt="Profile Avatar" 
+                className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-teal-500 to-emerald-500 text-white font-black flex items-center justify-center text-xs border border-teal-400/20 neu-circle shadow-inner">
+                {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : "?"}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Navigation Items */}
         <nav className="flex flex-col gap-1.5 flex-grow">
@@ -186,7 +211,6 @@ export default function DashboardPage() {
             { id: "skills", label: "Trending Skills", icon: <TrendingUp className="w-4 h-4" /> },
             { id: "planner", label: "Goal Planner", icon: <Target className="w-4 h-4" /> },
             { id: "antijobs", label: "Anti-Matching Jobs", icon: <ShieldAlert className="w-4 h-4" /> },
-            { id: "insights", label: "Career Insights", icon: <BarChart3 className="w-4 h-4" /> },
             { id: "resume", label: "Resume Detail", icon: <FileText className="w-4 h-4" /> },
             { id: "profile", label: "Profile", icon: <User className="w-4 h-4" /> },
             { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
@@ -196,10 +220,11 @@ export default function DashboardPage() {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-3 px-4 py-3 text-xs font-bold rounded-xl transition-all text-left ${isActive ? `neu-pressed text-sky-400 border-none` : "text-slate-400 hover:text-slate-200 hover:translate-y-[-1px] neu-button border-none mb-1.5"}`}
+                className={`flex items-center gap-3 rounded-xl transition-all text-left ${sidebarCollapsed ? "justify-center p-3" : "px-4 py-3 text-xs font-bold"} ${isActive ? `neu-pressed text-teal-400 border-none` : "text-slate-400 hover:text-slate-200 hover:translate-y-[-1px] neu-button border-none mb-1.5"}`}
+                title={sidebarCollapsed ? item.label : undefined}
               >
-                <span className={isActive ? "text-sky-400" : "text-slate-400"}>{item.icon}</span>
-                {item.label}
+                <span className={isActive ? "text-teal-400" : "text-slate-400"}>{item.icon}</span>
+                {!sidebarCollapsed && item.label}
               </button>
             );
           })}
@@ -208,10 +233,11 @@ export default function DashboardPage() {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-rose-450 rounded-xl transition-all text-left border-none neu-button hover:text-rose-400 hover:shadow-[0_0_12px_rgba(244,63,94,0.1)] cursor-pointer"
+          className={`flex items-center gap-3 rounded-xl transition-all text-left border-none neu-button hover:text-rose-400 hover:shadow-[0_0_12px_rgba(244,63,94,0.1)] cursor-pointer ${sidebarCollapsed ? "justify-center p-3" : "px-4 py-3 text-xs font-bold text-rose-450"}`}
+          title={sidebarCollapsed ? "Logout" : undefined}
         >
           <LogOut className="w-4 h-4 text-rose-500" />
-          Logout
+          {!sidebarCollapsed && "Logout"}
         </button>
       </aside>
 
@@ -231,8 +257,8 @@ export default function DashboardPage() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold border-none neu-circle">A</div>
-                  <span className="font-bold text-slate-200 text-sm">AuraJobs</span>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-teal-400 to-emerald-500 flex items-center justify-center text-white font-bold border-none neu-circle">A</div>
+                  <span className="font-bold text-slate-200 text-sm">VTP</span>
                 </div>
                 <button onClick={() => setSidebarOpen(false)} className="cursor-pointer border-none neu-circle p-1">
                   <X className="w-4 h-4 text-slate-400" />
@@ -246,7 +272,6 @@ export default function DashboardPage() {
                   { id: "skills", label: "Trending Skills", icon: <TrendingUp className="w-4 h-4" /> },
                   { id: "planner", label: "Goal Planner", icon: <Target className="w-4 h-4" /> },
                   { id: "antijobs", label: "Anti-Matching Jobs", icon: <ShieldAlert className="w-4 h-4" /> },
-                  { id: "insights", label: "Career Insights", icon: <BarChart3 className="w-4 h-4" /> },
                   { id: "resume", label: "Resume Detail", icon: <FileText className="w-4 h-4" /> },
                   { id: "profile", label: "Profile", icon: <User className="w-4 h-4" /> },
                   { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
@@ -259,7 +284,7 @@ export default function DashboardPage() {
                         setActiveTab(item.id);
                         setSidebarOpen(false);
                       }}
-                      className={`flex items-center gap-3 px-4 py-3.5 text-xs font-bold rounded-xl transition-all text-left border-none mb-1.5 ${isActive ? "neu-pressed text-sky-400" : "text-slate-400 hover:text-slate-200 neu-button"}`}
+                      className={`flex items-center gap-3 px-4 py-3.5 text-xs font-bold rounded-xl transition-all text-left border-none mb-1.5 ${isActive ? "neu-pressed text-teal-400" : "text-slate-400 hover:text-slate-200 neu-button"}`}
                     >
                       {item.icon}
                       {item.label}
@@ -281,7 +306,7 @@ export default function DashboardPage() {
       </AnimatePresence>
 
       {/* MAIN CONTAINER */}
-      <div className="flex-1 flex flex-col min-w-0 relative z-25 lg:pl-64">
+      <div className={`flex-1 flex flex-col min-w-0 relative z-25 transition-all duration-300 ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         
         {/* HEADER BAR */}
         <header className="sticky top-0 z-35 w-full neu-header-bg border-b border-slate-200/60 h-16 flex items-center justify-between px-6 shadow-md">
@@ -312,18 +337,26 @@ export default function DashboardPage() {
             
             {/* Dark/Light Mode Toggle Switch */}
             <div className="flex items-center gap-2 mr-2">
-              <span className="text-[10px] font-bold text-slate-400">Glow: {theme === "light" ? "Cyan" : "Violet"}</span>
               <button
                 onClick={toggleTheme}
-                className="w-10 h-5.5 rounded-full relative transition-colors duration-300 flex items-center px-0.5 focus:outline-none cursor-pointer border-none neu-pressed"
-                aria-label="Toggle Accent Glow Mode"
+                className="w-16 h-8.5 rounded-full relative transition-colors duration-300 flex items-center px-0.5 focus:outline-none cursor-pointer border-none bg-slate-150 dark:bg-slate-900/60 neu-pressed"
+                aria-label="Toggle Theme Mode"
               >
+                {/* Left Indicator (circular ring outline) */}
+                <div className="absolute left-2.5 w-3 h-3 rounded-full border-2 border-slate-700 dark:border-slate-500 opacity-80" />
+                
+                {/* Right Indicator (glowing horizontal white line) */}
+                <div 
+                  className="absolute right-3.5 w-3.5 h-0.5 rounded-full opacity-100 z-0" 
+                  style={{ backgroundColor: "#ffffff", boxShadow: "0 0 8px #ffffff" }}
+                />
+
+                {/* Sliding Knob */}
                 <motion.div
                   layout
-                  className="w-3.5 h-3.5 rounded-full border-none shadow-sm cursor-pointer neu-circle"
-                  style={{ backgroundColor: theme === "light" ? "#38bdf8" : "#818cf8" }}
-                  animate={{ x: theme === "dark" ? 16 : 0 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  className="w-7.5 h-7.5 rounded-full border-none shadow-md cursor-pointer bg-white dark:bg-slate-300 z-10"
+                  animate={{ x: theme === "dark" ? 0 : 30 }}
+                  transition={{ duration: 0.1, ease: "easeOut" }}
                 />
               </button>
             </div>
@@ -357,7 +390,7 @@ export default function DashboardPage() {
                         {activeUnreadCount > 0 && (
                           <button 
                             onClick={clearNotifications}
-                            className="text-[10px] font-bold text-sky-400 hover:underline cursor-pointer border-none bg-transparent"
+                            className="text-[10px] font-bold text-teal-400 hover:underline cursor-pointer border-none bg-transparent"
                           >
                             Clear All
                           </button>
@@ -394,17 +427,23 @@ export default function DashboardPage() {
               onClick={() => setActiveTab("profile")}
               className="flex items-center gap-2 p-1 rounded-xl cursor-pointer transition-all border-none neu-button hover:translate-y-[-1px]"
             >
-              <img 
-                src={profile.profilePic} 
-                alt="Avatar" 
-                className="w-8 h-8 rounded-lg object-cover"
-              />
+              {profile.profilePic ? (
+                <img 
+                  src={profile.profilePic} 
+                  alt="Avatar" 
+                  className="w-8 h-8 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-teal-500 to-emerald-500 text-white font-black flex items-center justify-center text-xs shadow-inner">
+                  {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : "?"}
+                </div>
+              )}
             </div>
           </div>
         </header>
 
         {/* CONTENT AREA */}
-        <main className="flex-1 overflow-y-auto p-6 relative">
+        <main className="flex-1 overflow-y-auto pt-10 px-6 pb-6 relative">
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === "dashboard" && (
@@ -422,7 +461,7 @@ export default function DashboardPage() {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => setActiveTab("jobs")}
-                    className="px-4 py-2 text-xs font-bold bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition-all flex items-center gap-1.5 shadow-xs"
+                    className="px-4 py-2 text-xs font-bold bg-teal-500 text-white rounded-xl hover:bg-teal-600 transition-all flex items-center gap-1.5 shadow-xs"
                   >
                     View Matches <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -432,8 +471,8 @@ export default function DashboardPage() {
               {/* Stat Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
-                  { label: "Recommended Jobs", value: "14", desc: "Top matched roles", icon: <Briefcase className="w-4 h-4 text-sky-500" /> },
-                  { label: "Resume AI Score", value: `${resumeScore}/100`, desc: "Strengthened profile", icon: <Award className="w-4 h-4 text-indigo-500" /> },
+                  { label: "Recommended Jobs", value: "14", desc: "Top matched roles", icon: <Briefcase className="w-4 h-4 text-teal-500" /> },
+                  { label: "Resume AI Score", value: `${resumeScore}/100`, desc: "Strengthened profile", icon: <Award className="w-4 h-4 text-teal-500" /> },
                   { label: "Active Applications", value: "3", desc: "Submitted vacancies", icon: <CheckCircle2 className="w-4 h-4 text-teal-500" /> },
                   { label: "Agent Confidence", value: "96%", desc: "Accurate matches", icon: <Sparkles className="w-4 h-4 text-purple-500" /> },
                   { label: "Career Readiness", value: "85%", desc: "Skills readiness score", icon: <Clock className="w-4 h-4 text-orange-500" /> },
@@ -458,7 +497,7 @@ export default function DashboardPage() {
                     <h3 className="font-extrabold text-slate-200 text-lg">Top Recommended Roles</h3>
                     <button 
                       onClick={() => setActiveTab("jobs")}
-                      className="text-xs font-bold text-sky-455 hover:underline flex items-center gap-1 cursor-pointer border-none bg-transparent"
+                      className="text-xs font-bold text-teal-500 hover:underline flex items-center gap-1 cursor-pointer border-none bg-transparent"
                     >
                       See All Matches <ArrowUpRight className="w-3.5 h-3.5" />
                     </button>
@@ -473,12 +512,12 @@ export default function DashboardPage() {
 
                 {/* Trending Skills & ThoughtStream side panel */}
                 <div className="lg:col-span-4 flex flex-col gap-6">
-                  <ThoughtStream />
+
                   <div className="flex items-center justify-between">
                     <h3 className="font-extrabold text-slate-200 text-lg">Trending Skills</h3>
                     <button 
                       onClick={() => setActiveTab("skills")}
-                      className="text-xs font-bold text-sky-455 hover:underline cursor-pointer border-none bg-transparent"
+                      className="text-xs font-bold text-teal-500 hover:underline cursor-pointer border-none bg-transparent"
                     >
                       Inspect Feed
                     </button>
@@ -538,25 +577,35 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {trendingSkills.map((skill) => (
-                  <div key={skill.name} className="glass-card glow-border p-5 rounded-2xl flex flex-col justify-between gap-4">
+                  <div 
+                    key={skill.name} 
+                    className="group neu-card neu-card-hover p-5 rounded-2xl flex flex-col justify-between gap-5 border-none relative overflow-hidden"
+                  >
+                    {/* Subtle top indicator bar showing on hover */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-400 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                    
                     <div className="flex justify-between items-start">
                       <div className="flex flex-col text-left">
-                        <span className="text-sm font-bold text-slate-800">{skill.name}</span>
-                        <span className="text-[9px] text-slate-400 tracking-wider font-semibold uppercase">{skill.category} category</span>
+                        <span className="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight group-hover:text-teal-500 dark:group-hover:text-teal-400 transition-colors">
+                          {skill.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">
+                          {skill.category}
+                        </span>
                       </div>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">
-                        Growth +{skill.growth}%
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black text-teal-600 dark:text-teal-400 bg-teal-500/10 dark:bg-teal-500/10 px-2 py-0.5 rounded-lg border border-teal-500/20">
+                        +{skill.growth}%
                       </span>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-slate-400">
                         <span>Popularity Weight</span>
                         <span>{skill.popularity}%</span>
                       </div>
-                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                      <div className="w-full bg-slate-200/50 dark:bg-slate-900/60 h-2 rounded-full overflow-hidden neu-pressed p-[1px] border-none">
                         <div 
-                          className="bg-indigo-500 h-full rounded-full"
+                          className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(20,184,166,0.3)]"
                           style={{ width: `${skill.popularity}%` }}
                         />
                       </div>
@@ -575,51 +624,57 @@ export default function DashboardPage() {
               className="flex flex-col gap-6 text-left"
             >
               <div>
-                <h2 className="text-2xl font-extrabold text-slate-900">Dream Job Blueprint</h2>
-                <p className="text-slate-500 text-sm mt-1">Enter your target company or job role (e.g. Google SDE, ML Architect) to map skill requirements and generate roadmaps.</p>
+                <h2 className="text-2xl font-extrabold text-slate-900">Skill Mastery Planner</h2>
+                <p className="text-slate-500 text-sm mt-1">Enter your target technology or skill goal (e.g. Next.js, Docker, Machine Learning) to map required concepts and compile weekly study roadmaps.</p>
               </div>
 
               {/* Target Input form */}
-              <form onSubmit={handleAnalyzeGoal} className="glass-card glow-border p-6 rounded-3xl shadow-sm flex flex-col md:flex-row gap-4 items-end">
-                <div className="flex-1 flex flex-col gap-2 text-left w-full">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Dream Company or Role</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Google SDE, Microsoft SWE, Machine Learning Engineer"
-                    value={dreamInput}
-                    onChange={(e) => setDreamInput(e.target.value)}
-                    className="h-12 w-full rounded-xl px-4 text-sm glass-input font-medium text-slate-700"
-                    disabled={planningActive}
-                  />
-                  <div className="flex gap-2.5 mt-1.5 flex-wrap">
-                    {["Google SDE", "Microsoft SWE", "Machine Learning Engineer"].map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => setDreamInput(tag)}
-                        className="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100/70 border border-indigo-100 px-3 py-1 rounded-full cursor-pointer"
-                      >
-                        + {tag}
-                      </button>
-                    ))}
+              <form onSubmit={handleAnalyzeGoal} className="glass-card glow-border p-6 rounded-3xl shadow-sm flex flex-col gap-4 text-left">
+                
+                {/* Input Row */}
+                <div className="flex flex-col md:flex-row gap-4 items-end w-full">
+                  <div className="flex-1 flex flex-col gap-2 text-left w-full">
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Target Skill or Technology</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. React / Next.js, Docker & DevOps, Machine Learning & AI"
+                      value={dreamInput}
+                      onChange={(e) => setDreamInput(e.target.value)}
+                      className="h-12 w-full rounded-xl px-4 text-sm glass-input font-medium text-slate-700"
+                      disabled={planningActive}
+                    />
                   </div>
+
+                  <button
+                    type="submit"
+                    disabled={planningActive}
+                    className="h-12 w-full md:w-40 rounded-2xl bg-gradient-to-r from-teal-500 via-teal-600 to-emerald-600 text-white font-semibold flex items-center justify-center gap-2 shadow-md shadow-teal-500/10 hover:shadow-lg hover:shadow-teal-500/20 transition-all cursor-pointer flex-shrink-0"
+                  >
+                    {planningActive ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Analyzing
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 fill-white" /> Compile Plan
+                      </>
+                    )}
+                  </button>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={planningActive}
-                  className="h-12 w-full md:w-40 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white font-semibold flex items-center justify-center gap-2 shadow-md shadow-indigo-100 hover:shadow-lg hover:shadow-indigo-200 transition-all cursor-pointer"
-                >
-                  {planningActive ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Analyzing
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 fill-white" /> Compile Plan
-                    </>
-                  )}
-                </button>
+                {/* Suggestions Row */}
+                <div className="flex gap-2.5 flex-wrap">
+                  {["React / Next.js", "Docker & DevOps", "Machine Learning & AI"].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setDreamInput(tag)}
+                      className="text-[10px] font-bold text-teal-600 bg-teal-50 hover:bg-teal-100/70 border border-teal-100 px-3 py-1 rounded-full cursor-pointer"
+                    >
+                      + {tag}
+                    </button>
+                  ))}
+                </div>
               </form>
 
               {/* Analyzed Result Panel */}
@@ -633,9 +688,15 @@ export default function DashboardPage() {
                     {/* Left Column: Metrics & Skill progress */}
                     <div className="lg:col-span-5 flex flex-col gap-6">
                       
+                      {/* Target Skill Header */}
+                      <div className="bg-white border border-slate-200/60 p-6 rounded-3xl flex flex-col gap-1 text-left">
+                        <span className="text-[9px] text-teal-500 font-black uppercase tracking-widest">Active Study Goal</span>
+                        <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{goalData.targetSkill}</h3>
+                      </div>
+
                       {/* Estimated Readiness Card */}
                       <div className="bg-white border border-slate-200/60 p-6 rounded-3xl flex flex-col gap-3 text-left">
-                        <div className="flex items-center gap-2 text-indigo-600">
+                        <div className="flex items-center gap-2 text-teal-600">
                           <Clock className="w-5 h-5" />
                           <span className="text-xs font-bold uppercase tracking-wider">Estimated Timeframe</span>
                         </div>
@@ -651,11 +712,11 @@ export default function DashboardPage() {
                             <div key={sk.name} className="flex flex-col gap-1.5">
                               <div className="flex justify-between items-center text-xs">
                                 <span className="font-bold text-slate-700">{sk.name}</span>
-                                <span className="text-[10px] font-bold text-indigo-600">{sk.progress}% Ready</span>
+                                <span className="text-[10px] font-bold text-teal-600">{sk.progress}% Ready</span>
                               </div>
                               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                 <div 
-                                  className="bg-indigo-500 h-full rounded-full"
+                                  className="bg-teal-500 h-full rounded-full"
                                   style={{ width: `${sk.progress}%` }}
                                 />
                               </div>
@@ -670,18 +731,18 @@ export default function DashboardPage() {
                     <div className="lg:col-span-7 flex flex-col gap-6">
                       <div className="bg-white border border-slate-200/60 p-6 rounded-3xl flex flex-col gap-4 text-left">
                         <h4 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
-                          <CheckSquare className="w-5 h-5 text-indigo-500" />
+                          <CheckSquare className="w-5 h-5 text-teal-500" />
                           Weekly Roadmap & Tasks
                         </h4>
 
                         <div className="flex flex-col gap-4">
                           {goalData.weeklyPlan.map((week, idx) => (
-                            <div key={idx} className="border-l-2 border-indigo-100 pl-4 py-1 flex flex-col gap-2">
-                              <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">{week.week}</span>
+                            <div key={idx} className="border-l-2 border-teal-100 pl-4 py-1 flex flex-col gap-2">
+                              <span className="text-xs font-black text-teal-600 uppercase tracking-widest">{week.week}</span>
                               <div className="flex flex-col gap-1.5">
                                 {week.tasks.map((task, tIdx) => (
                                   <label key={tIdx} className="flex items-start gap-2.5 text-xs text-slate-600 font-medium cursor-pointer">
-                                    <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                                    <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
                                     <span>{task}</span>
                                   </label>
                                 ))}
@@ -767,97 +828,7 @@ export default function DashboardPage() {
             </motion.div>
           )}
 
-          {/* TAB 6: CAREER INSIGHTS */}
-          {activeTab === "insights" && (
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }} 
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col gap-6 text-left"
-            >
-              <div>
-                <h2 className="text-2xl font-extrabold text-slate-900">Career Vector Insights</h2>
-                <p className="text-slate-500 text-sm mt-1">Telemetry analytics mapping resume alignment strengths and recommendation accuracy.</p>
-              </div>
 
-              {/* Chart Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* Radar Chart (Skills strengths) */}
-                <div className="bg-white border border-slate-200/60 p-6 rounded-3xl flex flex-col gap-4">
-                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-50 pb-2">Skills Vector Alignment</h4>
-                  <div className="w-full aspect-[4/3] flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="90%">
-                      <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
-                        <PolarGrid stroke="#e2e8f0" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: "#64748b", fontSize: 10, fontWeight: "bold" }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: "#94a3b8", fontSize: 8 }} />
-                        <Radar name="Student Fit" dataKey="A" stroke={primaryThemeColor} fill={primaryThemeColor} fillOpacity={0.25} />
-                        <Radar name="Target Bench" dataKey="B" stroke={secondaryThemeColor} fill={secondaryThemeColor} fillOpacity={0.1} />
-                        <Tooltip />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Pie Chart (Domain distribution) */}
-                <div className="bg-white border border-slate-200/60 p-6 rounded-3xl flex flex-col gap-4">
-                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-50 pb-2">Matched Domain Distribution</h4>
-                  <div className="w-full aspect-[4/3] flex items-center justify-center relative">
-                    <ResponsiveContainer width="100%" height="90%">
-                      <PieChart>
-                        <Pie
-                          data={pieData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius="55%"
-                          outerRadius="75%"
-                          paddingAngle={3}
-                          dataKey="value"
-                        >
-                          {pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: 11, fontWeight: "bold" }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Bar Chart (Recommendation Accuracy) */}
-                <div className="bg-white border border-slate-200/60 p-6 rounded-3xl flex flex-col gap-4">
-                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-50 pb-2">Agent Accuracy Tracker</h4>
-                  <div className="w-full aspect-[4/3] flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="90%">
-                      <BarChart data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <XAxis dataKey="month" stroke="#94a3b8" tickLine={false} style={{ fontSize: 10, fontWeight: "bold" }} />
-                        <YAxis stroke="#94a3b8" tickLine={false} style={{ fontSize: 10 }} />
-                        <Tooltip cursor={{ fill: "rgba(99, 102, 241, 0.03)" }} />
-                        <Bar dataKey="accuracy" fill={primaryThemeColor} radius={[6, 6, 0, 0]} barSize={28} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Line Chart (Learning hours) */}
-                <div className="bg-white border border-slate-200/60 p-6 rounded-3xl flex flex-col gap-4">
-                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-50 pb-2">Weekly Skill Accumulation Hours</h4>
-                  <div className="w-full aspect-[4/3] flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="90%">
-                      <LineChart data={lineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <XAxis dataKey="week" stroke="#94a3b8" tickLine={false} style={{ fontSize: 10, fontWeight: "bold" }} />
-                        <YAxis stroke="#94a3b8" tickLine={false} style={{ fontSize: 10 }} />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="hours" stroke={secondaryThemeColor} strokeWidth={3} dot={{ fill: secondaryThemeColor }} activeDot={{ r: 6 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-              </div>
-            </motion.div>
-          )}
 
           {/* TAB 7: RESUME */}
           {activeTab === "resume" && (
@@ -879,7 +850,7 @@ export default function DashboardPage() {
                   {/* File card */}
                   <div className="bg-white border border-slate-200/60 p-6 rounded-3xl text-left flex flex-col gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                      <div className="w-11 h-11 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600">
                         <FileText className="w-5.5 h-5.5" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -892,7 +863,7 @@ export default function DashboardPage() {
                       onClick={() => router.push("/upload")}
                       className="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      <RefreshCw className="w-3.5 h-3.5 text-indigo-500" /> Replace Resume Document
+                      <RefreshCw className="w-3.5 h-3.5 text-teal-500" /> Replace Resume Document
                     </button>
                   </div>
 
@@ -900,8 +871,8 @@ export default function DashboardPage() {
                   <div className="bg-white border border-slate-200/60 p-6 rounded-3xl text-left flex flex-col gap-4">
                     <h3 className="font-extrabold text-slate-800 text-base">Resume Telemetry Score</h3>
                     <div className="flex items-center gap-4 border-b border-slate-50 pb-4">
-                      <div className="w-16 h-16 rounded-full border-4 border-indigo-500 flex flex-col items-center justify-center shadow-md">
-                        <span className="text-lg font-black text-indigo-600">{resumeScore}</span>
+                      <div className="w-16 h-16 rounded-full border-4 border-teal-500 flex flex-col items-center justify-center shadow-md">
+                        <span className="text-lg font-black text-teal-600">{resumeScore}</span>
                       </div>
                       <div className="flex flex-col text-left gap-0.5">
                         <span className="text-xs font-bold text-slate-800">Excellent Matching Readiness</span>
@@ -918,7 +889,7 @@ export default function DashboardPage() {
                       ].map((item, idx) => (
                         <div key={idx} className="flex justify-between items-center text-xs font-semibold text-slate-700">
                           <span>{item.factor}</span>
-                          <span className="text-indigo-600">{item.score}%</span>
+                          <span className="text-teal-600">{item.score}%</span>
                         </div>
                       ))}
                     </div>
@@ -1042,7 +1013,7 @@ export default function DashboardPage() {
                     <div className="flex gap-3 justify-end border-t border-slate-100 pt-5">
                       <button
                         type="submit"
-                        className="px-5 py-2.5 rounded-xl bg-indigo-500 text-white text-xs font-bold hover:bg-indigo-600 transition-all flex items-center gap-1.5 shadow-sm shadow-indigo-100 cursor-pointer"
+                        className="px-5 py-2.5 rounded-xl bg-teal-500 text-white text-xs font-bold hover:bg-teal-600 transition-all flex items-center gap-1.5 shadow-sm shadow-teal-100 cursor-pointer"
                       >
                         <Save className="w-3.5 h-3.5" /> Save Changes
                       </button>
@@ -1066,7 +1037,7 @@ export default function DashboardPage() {
                       {profile.skills.map((sk) => (
                         <span 
                           key={sk}
-                          className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50/70 border border-indigo-100 px-2 py-0.5 rounded-md"
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-teal-600 bg-teal-50/70 border border-teal-100 px-2 py-0.5 rounded-md"
                         >
                           {sk}
                           <button 
@@ -1074,7 +1045,7 @@ export default function DashboardPage() {
                             onClick={() => removeSkill(sk)}
                             className="p-0.5 rounded-full hover:bg-indigo-100"
                           >
-                            <X className="w-3 h-3 text-indigo-400" />
+                            <X className="w-3 h-3 text-teal-400" />
                           </button>
                         </span>
                       ))}
@@ -1091,7 +1062,7 @@ export default function DashboardPage() {
                       />
                       <button
                         type="submit"
-                        className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center hover:bg-indigo-100 transition-all cursor-pointer"
+                        className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center hover:bg-indigo-100 transition-all cursor-pointer"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
@@ -1125,17 +1096,17 @@ export default function DashboardPage() {
                   <div className="flex flex-col gap-4 text-xs font-semibold text-slate-600">
                     <label className="flex items-center justify-between cursor-pointer">
                       <span>Enable Hourly Crawling</span>
-                      <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-indigo-600 border-slate-350" />
+                      <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-teal-600 border-slate-350" />
                     </label>
                     
                     <label className="flex items-center justify-between cursor-pointer">
                       <span>Email Recommendations Digest</span>
-                      <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-indigo-600 border-slate-350" />
+                      <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-teal-600 border-slate-350" />
                     </label>
 
                     <label className="flex items-center justify-between cursor-pointer">
                       <span>Missing Skill Alerts (Telemetry)</span>
-                      <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-indigo-600 border-slate-350" />
+                      <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-teal-600 border-slate-350" />
                     </label>
                   </div>
                 </div>
@@ -1147,7 +1118,7 @@ export default function DashboardPage() {
                   <div className="flex flex-col gap-3 text-xs">
                     <div className="flex flex-col gap-1.5">
                       <span className="font-bold text-slate-500">API Sandbox Endpoint</span>
-                      <input type="text" readOnly value="https://api.aurajobs.com/v1/sandbox/telemetry" className="h-10 px-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-500 font-semibold select-all" />
+                      <input type="text" readOnly value="https://api.vtp.com/v1/sandbox/telemetry" className="h-10 px-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-500 font-semibold select-all" />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -1199,12 +1170,12 @@ export default function DashboardPage() {
               </div>
 
               {/* Match Score Indicator */}
-              <div className="p-3.5 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex items-center justify-between text-xs">
+              <div className="p-3.5 bg-teal-50/50 border border-teal-100 rounded-2xl flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
+                  <Sparkles className="w-4 h-4 text-teal-500 animate-pulse" />
                   <span className="font-bold text-slate-800">Agent Recommendation Fit</span>
                 </div>
-                <span className="font-black text-indigo-600 bg-white border border-indigo-100 px-3 py-1 rounded-full">{selectedJob.matchScore}% Match</span>
+                <span className="font-black text-teal-600 bg-white border border-teal-100 px-3 py-1 rounded-full">{selectedJob.matchScore}% Match</span>
               </div>
 
               {/* Description */}
@@ -1256,7 +1227,7 @@ export default function DashboardPage() {
                   onClick={() => {
                     toggleSaveJob(selectedJob.id);
                   }}
-                  className={`w-12 h-11 border rounded-xl flex items-center justify-center transition-all cursor-pointer ${savedJobs.includes(selectedJob.id) ? "bg-indigo-50 border-indigo-200 text-indigo-500" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-500"}`}
+                  className={`w-12 h-11 border rounded-xl flex items-center justify-center transition-all cursor-pointer ${savedJobs.includes(selectedJob.id) ? "bg-teal-50 border-teal-200 text-teal-500" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-500"}`}
                 >
                   <Bookmark className="w-5 h-5" />
                 </button>
@@ -1266,7 +1237,7 @@ export default function DashboardPage() {
                     handleApply(selectedJob);
                     setSelectedJob(null);
                   }}
-                  className="flex-1 h-11 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 hover:shadow-md text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+                  className="flex-1 h-11 bg-gradient-to-r from-teal-500 via-indigo-500 to-emerald-600 hover:shadow-md text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Send className="w-4 h-4" /> Apply for Vacancy
                 </button>
@@ -1324,8 +1295,8 @@ function JobCard({ job, onDetails, onApply, onSave, isSaved }: JobCardProps) {
         {/* Match Circle */}
         <div className="flex flex-col gap-0.5 text-center shrink-0">
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Agent Fit</span>
-          <div className="w-11 h-11 rounded-full border-2 border-indigo-400 flex items-center justify-center bg-indigo-50/30">
-            <span className="text-xs font-black text-indigo-600">{job.matchScore}%</span>
+          <div className="w-11 h-11 rounded-full border-2 border-teal-400 flex items-center justify-center bg-teal-50/30">
+            <span className="text-xs font-black text-teal-600">{job.matchScore}%</span>
           </div>
         </div>
 
@@ -1333,7 +1304,7 @@ function JobCard({ job, onDetails, onApply, onSave, isSaved }: JobCardProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => onSave(job.id)}
-            className={`w-9 h-9 border rounded-xl flex items-center justify-center cursor-pointer transition-all ${isSaved ? "bg-indigo-50 border-indigo-200 text-indigo-500" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-500"}`}
+            className={`w-9 h-9 border rounded-xl flex items-center justify-center cursor-pointer transition-all ${isSaved ? "bg-teal-50 border-teal-200 text-teal-500" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-500"}`}
           >
             <Bookmark className="w-4.5 h-4.5" />
           </button>
@@ -1342,12 +1313,12 @@ function JobCard({ job, onDetails, onApply, onSave, isSaved }: JobCardProps) {
             onClick={() => onDetails(job)}
             className="px-3.5 h-9 border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
           >
-            <Eye className="w-3.5 h-3.5 text-indigo-500" /> Details
+            <Eye className="w-3.5 h-3.5 text-teal-500" /> Details
           </button>
           
           <button
             onClick={() => onApply(job)}
-            className="px-3.5 h-9 bg-indigo-500 text-white text-xs font-bold rounded-xl hover:bg-indigo-600 transition-all flex items-center gap-1 cursor-pointer"
+            className="px-3.5 h-9 bg-teal-500 text-white text-xs font-bold rounded-xl hover:bg-teal-600 transition-all flex items-center gap-1 cursor-pointer"
           >
             <Send className="w-3 h-3" /> Apply
           </button>

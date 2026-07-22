@@ -63,7 +63,7 @@ export interface Notification {
 }
 
 interface GoalPlannerData {
-  roleCompany: string;
+  targetSkill: string;
   analyzed: boolean;
   estimatedTime: string;
   requiredSkills: { name: string; progress: number }[];
@@ -90,6 +90,9 @@ interface SessionContextType {
   theme: "light" | "dark";
   toggleTheme: () => void;
   
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  
   activeTab: string;
   setActiveTab: (tab: string) => void;
 
@@ -102,7 +105,7 @@ interface SessionContextType {
   trendingSkills: TrendingSkill[];
   
   goalData: GoalPlannerData | null;
-  analyzeGoal: (roleCompany: string) => void;
+  analyzeGoal: (targetSkill: string) => void;
 }
 
 const defaultProfile: Profile = {
@@ -241,6 +244,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [resumeScore, setResumeScore] = useState<number>(78);
   const [status, setStatus] = useState<"landing" | "login" | "onboarding" | "upload" | "scanning" | "analysis" | "dashboard">("landing");
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -269,7 +273,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     },
     {
       id: "notif-3",
-      title: "Welcome to AuraJobs",
+      title: "Welcome to VTP",
       description: "Start by completing your profile and uploading your latest resume for AI matching.",
       time: "2 hours ago",
       unread: false,
@@ -310,7 +314,17 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    setTheme((prev) => {
+      const next = prev === "light" ? "dark" : "light";
+      if (typeof window !== "undefined") {
+        if (next === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }
+      return next;
+    });
   };
 
   const markNotificationRead = (id: string) => {
@@ -350,33 +364,33 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
-  const analyzeGoal = (roleCompany: string) => {
-    const isGoogle = roleCompany.toLowerCase().includes("google") || roleCompany.toLowerCase().includes("sde") || roleCompany.toLowerCase().includes("swe");
-    const isMl = roleCompany.toLowerCase().includes("machine") || roleCompany.toLowerCase().includes("ml") || roleCompany.toLowerCase().includes("data");
+  const analyzeGoal = (targetSkill: string) => {
+    const isMl = targetSkill.toLowerCase().includes("machine") || targetSkill.toLowerCase().includes("ml") || targetSkill.toLowerCase().includes("ai") || targetSkill.toLowerCase().includes("python") || targetSkill.toLowerCase().includes("data");
+    const isDevOps = targetSkill.toLowerCase().includes("docker") || targetSkill.toLowerCase().includes("devops") || targetSkill.toLowerCase().includes("kubernetes") || targetSkill.toLowerCase().includes("aws") || targetSkill.toLowerCase().includes("cloud");
     
     let requiredSkills = [
-      { name: "Data Structures & Algorithms", progress: 85 },
-      { name: "TypeScript / React", progress: 95 },
-      { name: "Node.js & System Design", progress: 60 },
-      { name: "Docker & Cloud Deployments", progress: 40 },
-      { name: "Testing (Jest / Cypress)", progress: 30 }
+      { name: "HTML5 & CSS Layouts", progress: 95 },
+      { name: "JavaScript / TypeScript ES6", progress: 90 },
+      { name: "React State & Props", progress: 65 },
+      { name: "Next.js Framework Concepts", progress: 40 },
+      { name: "Tailwind UI & Styling", progress: 50 }
     ];
 
     let learningRoadmap = [
-      { title: "Strengthen System Design Basics", desc: "Study load balancing, caching, vertical vs horizontal scaling, and message queues.", duration: "2 weeks", completed: false },
-      { title: "Deep Dive into Docker & Containerization", desc: "Learn Dockerfiles, volume binding, networking, and docker-compose settings.", duration: "1 week", completed: false },
-      { title: "Advanced Backend Frameworks", desc: "Write scalable REST APIs, learn middleware authorization mechanisms and indexing.", duration: "2 weeks", completed: false },
-      { title: "Complete 2 Full-Stack Cloud Projects", desc: "Deploy React and Node/Python containers on AWS ECS or Vercel/Render pipelines.", duration: "3 weeks", completed: false }
+      { title: "Master Modern React Fundamentals", desc: "Understand hooks life cycles, custom state management, performance optimization, and context patterns.", duration: "2 weeks", completed: false },
+      { title: "Deep Dive into Next.js App Router", desc: "Learn file-based routing, Server Components, layout nesting, Suspense loading boundaries, and fetching architectures.", duration: "2 weeks", completed: false },
+      { title: "State Control & API Integrations", desc: "Configure Axios hooks, integrate API context management, and build robust error triggers.", duration: "2 weeks", completed: false },
+      { title: "Interactive Deployments", desc: "Compile production bundles, configure Vercel hostings, and complete responsive UI components.", duration: "2 weeks", completed: false }
     ];
 
     let weeklyPlan = [
-      { week: "Week 1: Fundamentals", tasks: ["Read Designing Data-Intensive Applications Ch 1-3", "Implement a simple Load Balancer using Node.js", "Solve 5 medium-hard system design case studies"] },
-      { week: "Week 2: Container Ecosystems", tasks: ["Write Dockerfile for Next.js app and run locally", "Set up docker-compose with local Redis and PostgreSQL instances", "Understand volume mounting and database state persistence"] },
-      { week: "Week 3: Production API Layering", tasks: ["Implement JWT auth middleware in FastAPI or Express", "Add logging (Winston/Zap) and request tracing to endpoints", "Write integration tests and check coverages (> 80%)"] },
-      { week: "Week 4: Cloud Infrastructure & Deployment", tasks: ["Deploy project container to AWS ECS Fargate", "Set up SSL certificate and custom domain routing using Route 53", "Configure auto-scaling thresholds and CPU alarms"] }
+      { week: "Week 1: Advanced React Life Cycles", tasks: ["Build a reusable context state controller", "Create custom state validation hooks", "Refactor standard inputs to use optimized debounce handlers"] },
+      { week: "Week 2: Next.js Architecture", tasks: ["Set up Next.js app with responsive route patterns", "Configure nested layouts with loading and error boundaries", "Verify Static vs Server-side fetching configurations"] },
+      { week: "Week 3: State & REST Data Pipelines", tasks: ["Integrate context state with Axios interceptors", "Handle API load spinners and warning toasts", "Design custom layout filters matching query search parameters"] },
+      { week: "Week 4: Styling & Hosting Platforms", tasks: ["Migrate interface design grids to custom CSS variables", "Run production compilation and clear TypeScript alerts", "Deploy project to Vercel/Netlify with live domain access"] }
     ];
 
-    let estimatedTime = "8 Weeks (Approx. 120 Hours)";
+    let estimatedTime = "4 Weeks (Approx. 40 Hours)";
 
     if (isMl) {
       requiredSkills = [
@@ -402,10 +416,34 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ];
 
       estimatedTime = "10 Weeks (Approx. 150 Hours)";
+    } else if (isDevOps) {
+      requiredSkills = [
+        { name: "Linux Administration & Bash", progress: 80 },
+        { name: "Docker Containerization", progress: 60 },
+        { name: "CI/CD Pipeline Configurations", progress: 40 },
+        { name: "Kubernetes Orchestration", progress: 30 },
+        { name: "AWS Cloud Infrastructure", progress: 50 }
+      ];
+
+      learningRoadmap = [
+        { title: "Master Container Ecosystems", desc: "Learn Dockerfiles, volume mount points, networks, and compose environments.", duration: "2 weeks", completed: false },
+        { title: "Kubernetes Orchestration", desc: "Understand pods, deployments, services, namespaces, and configMaps.", duration: "2 weeks", completed: false },
+        { title: "CI/CD Pipeline Automations", desc: "Configure GitHub Actions, build runner tasks, and publish container images.", duration: "2 weeks", completed: false },
+        { title: "Infrastructure as Code & Cloud", desc: "Manage AWS services, deploy container tasks, and monitor CPU alarms.", duration: "2 weeks", completed: false }
+      ];
+
+      weeklyPlan = [
+        { week: "Week 1: Multi-stage Containers", tasks: ["Write optimized Dockerfiles with multi-stage builds", "Configure local network bridge mappings", "Compose Redis + Node API stacks with volume persistence"] },
+        { week: "Week 2: Kubernetes Cluster Setup", tasks: ["Set up local Minikube cluster instance", "Write deployment.yaml and service.yaml configs", "Configure rolling updates and environment secret variables"] },
+        { week: "Week 3: GitHub CI/CD Actions", tasks: ["Create workflows to build and lint codebase on push", "Configure repository secrets for DockerHub access", "Automate image builds and tags upon pull-request merges"] },
+        { week: "Week 4: Cloud Engine Deployment", tasks: ["Deploy container tasks using AWS ECS ECS-CLI", "Configure target group health-check routes", "Set up AWS CloudWatch CPU usage threshold alerts"] }
+      ];
+
+      estimatedTime = "8 Weeks (Approx. 120 Hours)";
     }
 
     setGoalData({
-      roleCompany,
+      targetSkill,
       analyzed: true,
       estimatedTime,
       requiredSkills,
@@ -434,6 +472,9 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         theme,
         toggleTheme,
+        
+        sidebarCollapsed,
+        setSidebarCollapsed,
         
         activeTab,
         setActiveTab,

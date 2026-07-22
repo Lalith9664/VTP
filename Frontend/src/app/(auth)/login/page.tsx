@@ -1,18 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
-  Mail, Lock, Cpu, ArrowRight, UserCheck
+  Mail, Lock, Cpu, ArrowRight, UserCheck, ArrowLeft
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/store/SessionContext";
 import { supabase } from "@/lib/supabase";
+import { FloatingLines } from "@/components/FloatingLines";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { updateProfile } = useSession();
+  const { updateProfile, theme, toggleTheme } = useSession();
   const [email, setEmail] = useState("lalith.kumar@nit.edu");
   const [password, setPassword] = useState("••••••••");
   const [rememberMe, setRememberMe] = useState(true);
@@ -56,11 +58,47 @@ export default function LoginPage() {
   return (
     <div className="flex-1 min-h-screen grid grid-cols-1 lg:grid-cols-12 neu-bg relative overflow-hidden select-none text-slate-100">
       
+      {/* Full Background Floating Neural Network */}
+      <FloatingLines />
+
+      {/* Back to Home Button */}
+      <Link 
+        href="/"
+        className="absolute top-6 left-6 z-30 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold neu-button transition-all text-slate-400 hover:text-teal-400 border-none"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Home
+      </Link>
+
+      {/* Theme Toggle Switch */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-8 right-10 lg:right-16 z-30 w-16 h-8.5 rounded-full transition-colors duration-300 flex items-center px-0.5 focus:outline-none cursor-pointer border-none bg-slate-150 dark:bg-slate-900/60 neu-pressed"
+        aria-label="Toggle Theme Mode"
+      >
+        {/* Left Indicator (circular ring outline) */}
+        <div className="absolute left-2.5 w-3 h-3 rounded-full border-2 border-slate-700 dark:border-slate-500 opacity-80" />
+        
+        {/* Right Indicator (glowing horizontal white line) */}
+        <div 
+          className="absolute right-3.5 w-3.5 h-0.5 rounded-full opacity-100 z-0" 
+          style={{ backgroundColor: "#ffffff", boxShadow: "0 0 8px #ffffff" }}
+        />
+
+        {/* Sliding Knob */}
+        <motion.div
+          layout
+          className="w-7.5 h-7.5 rounded-full border-none shadow-md cursor-pointer bg-white dark:bg-slate-300 z-10"
+          animate={{ x: theme === "dark" ? 0 : 30 }}
+          transition={{ duration: 0.1, ease: "easeOut" }}
+        />
+      </button>
+
       {/* Background blobs for right side */}
-      <div className="absolute top-1/4 right-0 w-[400px] h-[400px] rounded-full bg-sky-500/5 blur-[100px] pointer-events-none" />
+      <div className="absolute top-1/4 right-0 w-[400px] h-[400px] rounded-full bg-teal-500/5 blur-[100px] pointer-events-none" />
       
       {/* LEFT SIDE: Large AI Animation (Visible on lg+) */}
-      <div className="hidden lg:flex lg:col-span-6 neu-sidebar-bg flex-col items-center justify-center p-12 relative overflow-hidden border-r border-slate-200/60">
+      <div className="hidden lg:flex lg:col-span-6 flex-col items-center justify-center p-12 relative overflow-hidden">
         
         {/* Decorative Grid */}
         <div className="absolute inset-0 grid-pattern opacity-30" />
@@ -69,7 +107,7 @@ export default function LoginPage() {
         <motion.div 
           animate={{ y: [0, -15, 0], rotate: [0, 4, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/4 left-1/4 w-32 h-32 rounded-3xl bg-sky-500/10 blur-xl pointer-events-none"
+          className="absolute top-1/4 left-1/4 w-32 h-32 rounded-3xl bg-teal-500/10 blur-xl pointer-events-none"
         />
         <motion.div 
           animate={{ y: [0, 20, 0], rotate: [0, -4, 0] }}
@@ -77,52 +115,69 @@ export default function LoginPage() {
           className="absolute bottom-1/4 right-1/4 w-40 h-40 rounded-full bg-purple-500/5 blur-xl pointer-events-none"
         />
 
-        {/* AI Network Core UI */}
+        {/* AI Network Core UI - Holographic Radar Core */}
         <div className="relative w-80 h-80 flex items-center justify-center z-10">
           
-          {/* Outer Pulsing Ring */}
-          <div className="absolute inset-0 rounded-full border border-indigo-500/10 animate-spin-slow" />
-          
-          {/* Inner Pulsing Ring */}
-          <div className="absolute inset-10 rounded-full border border-sky-500/10 animate-pulse" />
-          
-          {/* Inner Node Network Orbs */}
+          {/* Ambient Glassmorphic Soft Glow */}
+          <div className="absolute inset-[-20px] rounded-full bg-gradient-to-tr from-teal-500/15 via-emerald-400/10 to-cyan-500/15 blur-2xl pointer-events-none" />
+
+          {/* Radar Perimeter Tick Ring (Rotating) */}
           <motion.div 
             animate={{ rotate: 360 }}
-            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-4 flex items-center justify-between"
+            transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 rounded-full border border-teal-500/25 dark:border-teal-400/20 pointer-events-none"
           >
-            <div className="w-5 h-5 rounded-full bg-sky-400 shadow-lg shadow-sky-500/20" />
-            <div className="w-5 h-5 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/20" />
+            {/* Tech Radar Ticks */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-teal-400/60 rounded-full" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-teal-400/60 rounded-full" />
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-teal-400/60 rounded-full" />
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-teal-400/60 rounded-full" />
           </motion.div>
 
+          {/* Inner Dashed Speed Ring */}
           <motion.div 
             animate={{ rotate: -360 }}
+            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-8 rounded-full border border-dashed border-teal-400/30 dark:border-teal-400/20 pointer-events-none"
+          />
+
+          {/* Outer Orbiting Nodes */}
+          <motion.div 
+            animate={{ rotate: 360 }}
             transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-16 flex flex-col justify-between items-center"
+            className="absolute inset-0 flex items-center justify-between pointer-events-none"
           >
-            <div className="w-4 h-4 rounded-full bg-purple-550 shadow-lg shadow-purple-550/20" />
-            <div className="w-4 h-4 rounded-full bg-teal-400 shadow-lg shadow-teal-500/20" />
+            <div className="w-4 h-4 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.7)] border border-white/60" />
+            <div className="w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.7)] border border-white/60" />
           </motion.div>
 
-          {/* Central AI Core Orb - Neumorphic Circle */}
-          <div className="w-24 h-24 rounded-full flex flex-col items-center justify-center border-none text-slate-100 shadow-lg neu-circle">
-            <Cpu className="w-8 h-8 text-sky-400 animate-pulse" />
-            <span className="text-[9px] font-black tracking-widest text-sky-400 mt-2 uppercase">Aura AI</span>
+          {/* Inner Counter-Orbiting Nodes */}
+          <motion.div 
+            animate={{ rotate: -360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-10 flex flex-col justify-between items-center pointer-events-none"
+          >
+            <div className="w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)] border border-white/60" />
+            <div className="w-3.5 h-3.5 rounded-full bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.7)] border border-white/60" />
+          </motion.div>
+
+
+
+          {/* Central AI Core Orb - Glowing Glassmorphic Center Orb */}
+          <div className="w-26 h-26 rounded-full flex flex-col items-center justify-center p-1.5 neu-circle relative shadow-[0_0_25px_rgba(20,184,166,0.3)] border border-teal-400/40 bg-gradient-to-b from-teal-500/10 via-transparent to-emerald-500/10 backdrop-blur-md">
+            <img src="/logo.jpeg" alt="VTP Logo" className="w-full h-full rounded-full object-cover shadow-inner border border-teal-300/30" />
           </div>
         </div>
       </div>
 
       {/* RIGHT SIDE: Interactive Login Panel */}
       <div className="lg:col-span-6 flex flex-col items-center justify-center p-8 z-10">
-        <div className="w-full max-w-[400px] flex flex-col items-start gap-8 text-left">
+        <div className="w-full max-w-[400px] flex flex-col items-start gap-8 text-left lg:-translate-x-12">
           
           {/* Logo Header */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold shadow-md shadow-sky-500/10 neu-circle border-none">
-              A
-            </div>
-            <span className="text-lg font-bold text-slate-200">AuraJobs</span>
+            <img src="/logo.jpeg" alt="VTP Logo" className="w-12 h-12 rounded-xl object-cover shadow-md border-none neu-circle" />
+            <span className="text-lg font-bold text-slate-900 dark:text-slate-100">VTP</span>
           </div>
 
           {/* Heading */}
@@ -193,14 +248,14 @@ export default function LoginPage() {
                   type="checkbox" 
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-slate-700 bg-[#172033] text-sky-500 focus:ring-sky-500/20" 
+                  className="w-4 h-4 rounded border-slate-700 bg-[#172033] text-teal-500 focus:ring-sky-500/20" 
                 />
                 Remember Me
               </label>
               <button 
                 type="button" 
                 onClick={handleForgotPassword}
-                className="text-sky-400 hover:underline font-bold bg-transparent border-none cursor-pointer"
+                className="text-teal-400 hover:underline font-bold bg-transparent border-none cursor-pointer"
               >
                 Forgot Password?
               </button>
@@ -211,7 +266,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleLogin}
-                className="w-full h-12 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white font-bold flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer group border border-sky-400/20"
+                className="w-full h-12 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-bold flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer group border border-teal-400/20"
               >
                 <UserCheck className="w-4 h-4" />
                 Sign In
@@ -226,7 +281,7 @@ export default function LoginPage() {
             <button 
               type="button" 
               onClick={handleCreateAccount}
-              className="text-sky-400 hover:underline font-black bg-transparent border-none cursor-pointer"
+              className="text-teal-400 hover:underline font-black bg-transparent border-none cursor-pointer"
             >
               Create Account
             </button>

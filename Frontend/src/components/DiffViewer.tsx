@@ -71,7 +71,7 @@ export function DiffViewer({ diffData, onDownload }: DiffViewerProps) {
               </p>
               <p>{accepted[idx] ? item.tailored : item.original}</p>
               {accepted[idx] && (
-                <p className="text-[10px] text-sky-400/80 font-semibold mt-3 flex items-start gap-1 leading-snug">
+                <p className="text-[10px] text-teal-400/80 font-semibold mt-3 flex items-start gap-1 leading-snug">
                   <span>💡</span> <span>{item.reason}</span>
                 </p>
               )}
@@ -82,7 +82,7 @@ export function DiffViewer({ diffData, onDownload }: DiffViewerProps) {
       
       <button 
         onClick={handleDownload}
-        className="w-full h-12 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-indigo-650 hover:from-sky-600 hover:to-indigo-750 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-sky-500/10 border-none cursor-pointer active:scale-[0.99] mt-2"
+        className="w-full h-12 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-sky-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-teal-500/10 border-none cursor-pointer active:scale-[0.99] mt-2"
       >
         <Download className="w-4 h-4" /> 📄 Download Tailored Resume (PDF)
       </button>

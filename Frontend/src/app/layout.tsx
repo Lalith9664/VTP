@@ -38,10 +38,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <title>AuraJobs - Multi-Agent AI Job Automation</title>
+        <title>VTP - Multi-Agent AI Job Automation</title>
         <meta name="description" content="AI scans thousands of fresher jobs, understands your resume, analyzes your skills, and matches you to perfect opportunities automatically." />
+        <link rel="icon" href="/logo.jpeg" />
       </head>
-      <body className="min-h-full flex flex-col transition-colors duration-300 selection:bg-sky-500/20 selection:text-sky-200">
+      <body className="min-h-full flex flex-col transition-colors duration-300 selection:bg-teal-500/20 selection:text-teal-200">
         <QueryClientProvider client={queryClient}>
           <SessionProvider>
             <UserProvider>
