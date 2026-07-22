@@ -74,7 +74,7 @@ export default function LandingPage() {
       <div className="absolute inset-0 grid-pattern pointer-events-none opacity-40" />
 
       {/* Header / Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/70 dark:bg-[#0B1120]/70 backdrop-blur-md shadow-md shadow-black/5">
+      <header className="sticky top-0 z-50 w-full neu-header-bg shadow-md shadow-black/10">
         <div className="w-full px-6 lg:px-16 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/logo.jpeg" alt="VTP Logo" className="w-12 h-12 rounded-xl object-cover shadow-md border-none neu-circle" />
@@ -199,7 +199,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="w-full px-6 lg:px-16 pt-32 pb-24 md:pt-40 md:pb-32 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+      <section className="w-full px-6 lg:px-16 pt-16 pb-24 md:py-32 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
         
         {/* Left Hero */}
         <div className="lg:col-span-7 flex flex-col items-start gap-8 z-10 text-left">
