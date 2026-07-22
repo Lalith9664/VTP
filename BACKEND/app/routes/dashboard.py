@@ -52,16 +52,19 @@ async def get_dashboard_insights(current_user: dict = Depends(get_current_user))
         trends_task, peers_task, return_exceptions=True
     )
 
-    trending_skills = (
-        trends_result.get("trending_skills", [])
-        if not isinstance(trends_result, Exception)
-        else []
-    )
-    peer_insights = (
-        peer_result
-        if not isinstance(peer_result, Exception)
-        else []
-    )
+    trending_skills = []
+    peer_insights = []
+
+    if not isinstance(trends_result, Exception):
+        # analyze_trends() returns List[tuple[str, int]] — convert to dicts
+        for item in trends_result:
+            if isinstance(item, (list, tuple)) and len(item) >= 2:
+                trending_skills.append({"skill_name": item[0], "frequency": item[1]})
+            elif isinstance(item, dict):
+                trending_skills.append(item)
+
+    if not isinstance(peer_result, Exception):
+        peer_insights = peer_result or []
 
     return {
         "status": "success",

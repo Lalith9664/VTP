@@ -57,3 +57,4 @@ coverage/
 Frontend/coverage/
 .pytest_cache/
 .coverage
+FRONTEND/.next/

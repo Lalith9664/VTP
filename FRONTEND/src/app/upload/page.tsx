@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { useSession } from "@/store/SessionContext";
 import { FloatingLines } from "@/components/FloatingLines";
+import { analyzeResume } from "@/lib/api";
 
 interface ScanLog {
   id: number;
@@ -25,23 +26,52 @@ export default function ResumeUploadPage() {
   const router = useRouter();
   const { setUploadedFile, theme, toggleTheme } = useSession();
   
-  const [file, setFile] = useState<{ name: string; size: number } | null>(null);
+  const [file, setFile] = useState<{ name: string; size: number; raw: File } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
   // Scanning simulation states
   const [isScanning, setIsScanning] = useState(false);
   const [logs, setLogs] = useState<ScanLog[]>([
-    { id: 1, text: "Reading Skills...", category: "skills", done: false, values: ["React", "Next.js", "TypeScript", "Node.js", "Python", "FastAPI"] },
-    { id: 2, text: "Extracting Project details...", category: "projects", done: false, values: ["AI Agent Portal", "E-commerce Engine", "Portfolio Site"] },
-    { id: 3, text: "Parsing Academic History...", category: "education", done: false, values: ["NIT", "Computer Science", "CGPA 9.1"] },
-    { id: 4, text: "Evaluating Experience blocks...", category: "experience", done: false, values: ["Software Engineer Intern"] },
-    { id: 5, text: "Fetching GitHub profile data...", category: "github", done: false, values: ["github.com/lalithkumar"] },
-    { id: 6, text: "Building AI Skill Graph...", category: "graph", done: false }
+    { id: 1, text: "Parsing PDF text layers...", category: "skills", done: false },
+    { id: 2, text: "Extracting Skills & Technologies...", category: "skills", done: false },
+    { id: 3, text: "Parsing Education & Projects...", category: "education", done: false },
+    { id: 4, text: "Evaluating Experience sections...", category: "experience", done: false },
+    { id: 5, text: "Generating ATS resume embedding...", category: "github", done: false },
+    { id: 6, text: "Uploading to secure storage & building AI profile...", category: "graph", done: false }
   ]);
-
   const [activeLogIndex, setActiveLogIndex] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const apiResultRef = useRef<any>(null);
+  const apiCallStarted = useRef(false);
+
+  // Start real API call as soon as scanning begins
+  useEffect(() => {
+    if (!isScanning || apiCallStarted.current || !file?.raw) return;
+    apiCallStarted.current = true;
+    
+    analyzeResume(file.raw)
+      .then((result) => {
+        apiResultRef.current = result;
+        // Inject real extracted values into log chips
+        const skills = result.resume_details?.skills || [];
+        const projects = (result.resume_details?.projects || []).map((p: any) => p.name);
+        const edu = (result.resume_details?.education || []).map((e: any) => e.institution || e.degree);
+        const exp = (result.resume_details?.experience || []).map((e: any) => e.title);
+        
+        setLogs((prev) => prev.map((log) => {
+          if (log.id === 2 && skills.length) return { ...log, values: skills.slice(0, 6) };
+          if (log.id === 3 && (projects.length || edu.length)) return { ...log, values: [...edu.slice(0,2), ...projects.slice(0,2)] };
+          if (log.id === 4 && exp.length) return { ...log, values: exp.slice(0, 2) };
+          return log;
+        }));
+      })
+      .catch((err) => {
+        console.error("Resume analysis failed:", err);
+        setApiError(err.message || "Analysis failed");
+      });
+  }, [isScanning, file]);
 
   // Sequential scanning animation trigger
   useEffect(() => {
@@ -54,23 +84,33 @@ export default function ResumeUploadPage() {
           )
         );
         setActiveLogIndex((prev) => prev + 1);
-      }, 1000);
+      }, 1200);
       return () => clearTimeout(timer);
     } else {
+      // Wait for API to finish before redirecting
       const finishTimer = setTimeout(() => {
         setCompleted(true);
       }, 500);
 
       const redirectTimer = setTimeout(() => {
-        router.push("/analysis");
-      }, 3000);
+        if (apiResultRef.current) {
+          router.push("/resume-detail");
+        } else if (apiError) {
+          toast.error("Resume analysis failed — redirecting to analysis page.");
+          router.push("/analysis");
+        } else {
+          // API still in flight — wait a bit more
+          const waitMore = setTimeout(() => router.push("/resume-detail"), 3000);
+          return () => clearTimeout(waitMore);
+        }
+      }, 2500);
 
       return () => {
         clearTimeout(finishTimer);
         clearTimeout(redirectTimer);
       };
     }
-  }, [isScanning, activeLogIndex, logs.length, router]);
+  }, [isScanning, activeLogIndex, logs.length, router, apiError]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -81,7 +121,7 @@ export default function ResumeUploadPage() {
       return;
     }
 
-    setFile({ name: selectedFile.name, size: selectedFile.size });
+    setFile({ name: selectedFile.name, size: selectedFile.size, raw: selectedFile });
     setUploading(true);
     setProgress(0);
 
@@ -91,7 +131,7 @@ export default function ResumeUploadPage() {
         if (prev >= 100) {
           clearInterval(interval);
           setUploading(false);
-          toast.success("File uploaded successfully to sandbox server!");
+          toast.success("File ready — click Analyze to start AI processing!");
           return 100;
         }
         return prev + 10;
@@ -113,6 +153,8 @@ export default function ResumeUploadPage() {
     setFile(null);
     setProgress(0);
     setUploading(false);
+    apiCallStarted.current = false;
+    apiResultRef.current = null;
     toast.info("File removed.");
   };
 
@@ -126,7 +168,10 @@ export default function ResumeUploadPage() {
     const kbSize = (file.size / 1024).toFixed(1);
     setUploadedFile({ name: file.name, size: `${kbSize} KB` });
     
-    // Start scanning in the same page
+    toast.loading("Starting AI resume intelligence pipeline...", { id: "analyze" });
+    setTimeout(() => toast.dismiss("analyze"), 2000);
+
+    // Start scanning animation + real API call simultaneously
     setIsScanning(true);
   };
 

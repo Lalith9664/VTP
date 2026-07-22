@@ -29,8 +29,15 @@ export default function DashboardPage() {
     theme, toggleTheme, activeTab, setActiveTab,
     notifications, markNotificationRead, clearNotifications,
     jobs, antiJobs, trendingSkills, goalData, analyzeGoal,
-    sidebarCollapsed, setSidebarCollapsed
+    sidebarCollapsed, setSidebarCollapsed,
+    insightsLoading,
+    refreshInsights,
   } = useSession();
+
+  React.useEffect(() => {
+    refreshInsights();
+  }, [refreshInsights]);
+
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
@@ -556,12 +563,58 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex flex-col gap-4">
-                {jobs.map((job) => (
-                  <JobCard key={job.id} job={job} onDetails={handleJobDetails} onApply={handleApply} onSave={toggleSaveJob} isSaved={savedJobs.includes(job.id)} />
-                ))}
+                {insightsLoading ? (
+                  /* ── Skeleton loader ── */
+                  <>
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="rounded-3xl border border-slate-200/80 bg-white p-6 flex flex-col gap-4 shadow-sm animate-pulse"
+                        style={{ animationDelay: `${i * 120}ms` }}
+                      >
+                        {/* Top row */}
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex flex-col gap-2 flex-1">
+                            <div className="h-3 w-24 rounded-full bg-slate-200" />
+                            <div className="h-5 w-56 rounded-full bg-slate-200" />
+                            <div className="h-3 w-36 rounded-full bg-slate-200" />
+                          </div>
+                          <div className="w-14 h-14 rounded-2xl bg-slate-200 flex-shrink-0" />
+                        </div>
+                        {/* Skill chips */}
+                        <div className="flex gap-2 flex-wrap">
+                          {[0,1,2,3].map(j => (
+                            <div key={j} className="h-6 w-16 rounded-xl bg-slate-200" />
+                          ))}
+                        </div>
+                        {/* Bottom row */}
+                        <div className="flex gap-3 pt-2 border-t border-slate-100">
+                          <div className="h-9 flex-1 rounded-2xl bg-slate-200" />
+                          <div className="h-9 w-24 rounded-2xl bg-slate-200" />
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : jobs.length > 0 ? (
+                  jobs.map((job) => (
+                    <JobCard key={job.id} job={job} onDetails={handleJobDetails} onApply={handleApply} onSave={toggleSaveJob} isSaved={savedJobs.includes(job.id)} />
+                  ))
+                ) : (
+                  /* ── Empty state ── */
+                  <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+                    <div className="w-16 h-16 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center">
+                      <Briefcase className="w-7 h-7 text-teal-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-slate-700 text-base">No jobs loaded yet</h3>
+                      <p className="text-slate-400 text-sm mt-1 max-w-xs">Upload your resume and the AI will match the best opportunities for you.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
+
 
           {/* TAB 3: TRENDING SKILLS */}
           {activeTab === "skills" && (
@@ -921,20 +974,40 @@ export default function DashboardPage() {
 
                       <div className="flex flex-col gap-2 border-t border-slate-50 pt-4">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Indexed Project Entities</span>
-                        <ul className="flex flex-col gap-2 text-slate-600 font-semibold list-disc pl-4">
-                          <li>AI Agent Portal: Built using Next.js and FastAPI with local orchestration nodes.</li>
-                          <li>Distributed Task Compiler: MapReduce-inspired compiler using Golang.</li>
-                        </ul>
+                        {profile.parsedResume?.projects && profile.parsedResume.projects.length > 0 ? (
+                          <ul className="flex flex-col gap-2 text-slate-650 dark:text-slate-400 font-semibold list-disc pl-4">
+                            {profile.parsedResume.projects.map((proj: any, idx: number) => (
+                              <li key={idx}>
+                                <span className="text-slate-800 dark:text-slate-200 font-bold">{proj.name}:</span> {proj.description}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-xs text-slate-500">No project entities extracted from document.</p>
+                        )}
                       </div>
 
                       <div className="flex flex-col gap-2 border-t border-slate-50 pt-4">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Academics Parsed</span>
-                        <div className="grid grid-cols-2 gap-3 text-slate-600 font-semibold bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                          <div>University: <span className="text-slate-800 font-bold">{profile.college}</span></div>
-                          <div>Degree: <span className="text-slate-800 font-bold">{profile.degree}</span></div>
-                          <div>Department: <span className="text-slate-800 font-bold">{profile.department}</span></div>
-                          <div>CGPA: <span className="text-slate-800 font-bold">{profile.cgpa}/10.0</span></div>
-                        </div>
+                        {profile.parsedResume?.education && profile.parsedResume.education.length > 0 ? (
+                          <div className="flex flex-col gap-3">
+                            {profile.parsedResume.education.map((edu: any, idx: number) => (
+                              <div key={idx} className="grid grid-cols-2 gap-3 text-slate-650 dark:text-slate-400 font-semibold bg-slate-50 dark:bg-slate-850 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                                <div className="truncate">University: <span className="text-slate-800 dark:text-slate-250 font-bold">{edu.institution || "N/A"}</span></div>
+                                <div className="truncate">Degree: <span className="text-slate-800 dark:text-slate-250 font-bold">{edu.degree || "N/A"}</span></div>
+                                <div className="truncate">Graduation: <span className="text-slate-800 dark:text-slate-250 font-bold">{edu.year || "N/A"}</span></div>
+                                <div className="truncate">CGPA: <span className="text-slate-800 dark:text-slate-250 font-bold">{edu.gpa || "N/A"}</span></div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-3 text-slate-650 dark:text-slate-400 font-semibold bg-slate-50 dark:bg-slate-850 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                            <div className="truncate">University: <span className="text-slate-800 dark:text-slate-250 font-bold">{profile.college}</span></div>
+                            <div className="truncate">Degree: <span className="text-slate-800 dark:text-slate-250 font-bold">{profile.degree}</span></div>
+                            <div className="truncate">Department: <span className="text-slate-800 dark:text-slate-250 font-bold">{profile.department}</span></div>
+                            <div className="truncate">CGPA: <span className="text-slate-800 dark:text-slate-250 font-bold">{profile.cgpa}/10.0</span></div>
+                          </div>
+                        )}
                       </div>
 
                     </div>

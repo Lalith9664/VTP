@@ -185,27 +185,27 @@ async def prepare_final_response(state: AgentState) -> dict:
     return {"final_response": final_response}
 
 # ==============================================================================
-# 3. Build and Compile the LangGraph
+# 3. Build the LangGraph graph definition (no compilation at import time)
 # ==============================================================================
 
-builder = StateGraph(AgentState)
+_graph_builder = StateGraph(AgentState)
 
-builder.add_node("load_context", load_user_context)
-builder.add_node("fetch_jobs", fetch_and_filter_jobs)
-builder.add_node("analyze_peers", analyze_peers_and_trajectory)
-builder.add_node("generate_dossier", generate_full_dossier)
-builder.add_node("prepare_response", prepare_final_response)
+_graph_builder.add_node("load_context", load_user_context)
+_graph_builder.add_node("fetch_jobs", fetch_and_filter_jobs)
+_graph_builder.add_node("analyze_peers", analyze_peers_and_trajectory)
+_graph_builder.add_node("generate_dossier", generate_full_dossier)
+_graph_builder.add_node("prepare_response", prepare_final_response)
 
-builder.set_entry_point("load_context")
-builder.add_edge("load_context", "fetch_jobs")
-builder.add_edge("fetch_jobs", "analyze_peers")
+_graph_builder.set_entry_point("load_context")
+_graph_builder.add_edge("load_context", "fetch_jobs")
+_graph_builder.add_edge("fetch_jobs", "analyze_peers")
 
 def should_run_dossier(state: AgentState) -> Literal["generate_dossier", "prepare_response"]:
     if state.get("target_job_id"):
         return "generate_dossier"
     return "prepare_response"
 
-builder.add_conditional_edges(
+_graph_builder.add_conditional_edges(
     "analyze_peers",
     should_run_dossier,
     {
@@ -214,17 +214,29 @@ builder.add_conditional_edges(
     }
 )
 
-builder.add_edge("generate_dossier", "prepare_response")
-builder.add_edge("prepare_response", END)
+_graph_builder.add_edge("generate_dossier", "prepare_response")
+_graph_builder.add_edge("prepare_response", END)
 
-orchestrator = builder.compile()
+# Lazy-compiled: only built when first endpoint call is made, not at import time
+_orchestrator = None
+
+def _get_orchestrator():
+    """Compile the LangGraph orchestrator lazily on first use."""
+    global _orchestrator
+    if _orchestrator is None:
+        logger.info("⚙️ Compiling LangGraph orchestrator (first call)...")
+        _orchestrator = _graph_builder.compile()
+    return _orchestrator
+
 
 # ==============================================================================
 # 4. Main Entry Point for FastAPI Backend
 # ==============================================================================
 
 async def run_pipeline(user_id: str, search_query: str = None, job_id: str = None) -> dict:
-    """Backend calls this single function to execute the entire multi-agent flow."""
+    """Backend calls this single function to execute the entire multi-agent flow.
+    The pipeline graph is compiled lazily on the first call — not at startup.
+    """
     initial_state = {
         "user_id": user_id,
         "search_query": search_query,
@@ -239,6 +251,7 @@ async def run_pipeline(user_id: str, search_query: str = None, job_id: str = Non
     }
     
     try:
+        orchestrator = _get_orchestrator()
         final_state = await orchestrator.ainvoke(initial_state)
         return final_state.get("final_response", {})
     except Exception as e:

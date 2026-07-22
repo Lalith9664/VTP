@@ -38,3 +38,29 @@ class PrepOutput(BaseModel):
     missing_skills: List[str] = Field(..., description="List of specific skills the user lacks for this role.")
     questions: List[str] = Field(..., min_length=3, max_length=5, description="Technical interview questions targeting the missing or required skills.")
     study_resources: List[str] = Field(..., description="Actionable, specific topics or project ideas to study to bridge the skill gap.")
+
+
+# ==============================================================================
+# SKILL MASTERY ROADMAP / GOAL PLANNER SCHEMAS
+# ==============================================================================
+
+class RequiredSkillItem(BaseModel):
+    name: str = Field(..., description="Name of the required skill or concept.")
+    progress: int = Field(..., ge=0, le=100, description="Estimated progress based on user skills (0 to 100).")
+
+class LearningRoadmapItem(BaseModel):
+    title: str = Field(..., description="Title of the learning milestone.")
+    desc: str = Field(..., description="Description of what to study.")
+    duration: str = Field(..., description="Estimated duration (e.g. '2 weeks').")
+    completed: bool = Field(default=False)
+
+class WeeklyPlanItem(BaseModel):
+    week: str = Field(..., description="Week label, e.g., 'Week 1: Foundations'.")
+    tasks: List[str] = Field(..., description="List of 3 concrete tasks or projects to build.")
+
+class SkillRoadmapOutput(BaseModel):
+    estimatedTime: str = Field(..., description="Estimated time timeframe, e.g., '6 Weeks (Approx. 90 Hours)'.")
+    requiredSkills: List[RequiredSkillItem] = Field(..., description="List of required core skill sets.")
+    learningRoadmap: List[LearningRoadmapItem] = Field(..., description="Milestones to follow.")
+    weeklyPlan: List[WeeklyPlanItem] = Field(..., description="Weekly study breakdown.")
+

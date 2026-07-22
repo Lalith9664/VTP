@@ -182,7 +182,7 @@ export async function getDashboardInsights(
 export async function uploadResume(
   file: File,
   signal?: AbortSignal
-): Promise<{ status: string; user_id: string; message: string }> {
+): Promise<{ status: string; user_id: string; pdf_url: string; message: string }> {
   const form = new FormData();
   form.append("file", file);
   return apiFetch("/user/upload-resume", {
@@ -239,6 +239,183 @@ export async function triggerMidnightRefresh(
 ): Promise<{ status: string; jobs_cleared: number; scraped_count: number }> {
   return apiFetch("/admin/midnight-refresh", { method: "POST", signal });
 }
+
+// ─── Resume Intelligence Endpoints ───────────────────────────────────────────
+
+export interface ParsedEducation {
+  degree: string;
+  institution: string;
+  year: string;
+  gpa: string;
+}
+
+export interface ParsedExperience {
+  title: string;
+  company: string;
+  duration: string;
+  bullets: string[];
+}
+
+export interface ParsedProject {
+  name: string;
+  tech: string[];
+  description: string;
+}
+
+export interface ResumeDetails {
+  name?: string;
+  email?: string;
+  phone?: string;
+  summary?: string;
+  skills?: string[];
+  education?: ParsedEducation[];
+  experience?: ParsedExperience[];
+  projects?: ParsedProject[];
+  certifications?: string[];
+  location?: string;
+}
+
+export interface AnalyzeResumeResponse {
+  status: string;
+  user_id: string;
+  resume_details: ResumeDetails;
+  original_pdf_url: string;
+  ats_pdf_url: string;
+  raw_text_preview: string;
+  embedding_dimensions: number;
+  message: string;
+}
+
+export interface ResumeDetailsResponse {
+  status: string;
+  user_id: string;
+  resume_details: ResumeDetails;
+  raw_resume_text: string;
+  resume_pdf_url: string | null;
+  ats_pdf_url: string | null;
+  skills: string[];
+  ultimate_goal: string | null;
+  location: string | null;
+  education: string | null;
+}
+
+export interface ScrapedJob {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  skills: string[];
+  salary_range: string | null;
+  similarity_score: number;
+  toxic_score: number;
+  is_scam: boolean;
+  source: string;
+}
+
+/**
+ * POST /api/user/analyze-resume
+ * Full resume intelligence pipeline: parse → LLM extract → embed → store → ATS PDF.
+ * Called immediately after the user's upload scan animation completes.
+ */
+export async function analyzeResume(
+  file: File,
+  signal?: AbortSignal
+): Promise<AnalyzeResumeResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  return apiFetch("/user/analyze-resume", {
+    method: "POST",
+    body: form,
+    signal,
+  });
+}
+
+/**
+ * GET /api/user/resume-details
+ * Returns stored structured resume details for the resume detail page.
+ */
+export async function getResumeDetails(
+  signal?: AbortSignal
+): Promise<ResumeDetailsResponse> {
+  return apiFetch("/user/resume-details", { signal });
+}
+
+/**
+ * GET /api/jobs/my-jobs
+ * Returns scraped jobs personalised to the current user via resume embedding similarity.
+ */
+export async function getMyJobs(
+  limit = 20,
+  signal?: AbortSignal
+): Promise<{ status: string; user_id: string; count: number; jobs: ScrapedJob[] }> {
+  return apiFetch(`/jobs/my-jobs?limit=${limit}`, { signal });
+}
+
+export interface RoadmapRequiredSkill {
+  name: string;
+  progress: number;
+}
+
+export interface RoadmapLearningItem {
+  title: string;
+  desc: string;
+  duration: string;
+  completed: boolean;
+}
+
+export interface RoadmapWeeklyPlanItem {
+  week: string;
+  tasks: string[];
+}
+
+export interface SkillRoadmapData {
+  estimatedTime: string;
+  requiredSkills: RoadmapRequiredSkill[];
+  learningRoadmap: RoadmapLearningItem[];
+  weeklyPlan: RoadmapWeeklyPlanItem[];
+}
+
+export interface SkillRoadmapResponse {
+  status: string;
+  agent: string;
+  data: SkillRoadmapData;
+}
+
+/**
+ * POST /api/agents/trajectory/roadmap
+ * Generates a career roadmap / skill mastery plan for a target technology.
+ */
+export async function getSkillRoadmap(
+  targetSkill: string,
+  userSkills: string[],
+  signal?: AbortSignal
+): Promise<SkillRoadmapResponse> {
+  return apiFetch("/agents/trajectory/roadmap", {
+    method: "POST",
+    body: JSON.stringify({
+      target_skill: targetSkill,
+      user_skills: userSkills,
+    }),
+    signal,
+  });
+}
+
+/**
+ * POST /api/agents/scrape
+ * Triggers parallel job scraping and LLM enrichment.
+ */
+export async function triggerJobScrape(
+  signal?: AbortSignal
+): Promise<{ status: string; agent: string; scraped_count?: number; message?: string }> {
+  return apiFetch("/agents/scrape", {
+    method: "POST",
+    signal,
+  });
+}
+
+
+
 
 // ─── Default Export for Axios-like backwards compatibility ──────────────────
 const api = {

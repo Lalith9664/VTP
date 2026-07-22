@@ -13,7 +13,19 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { getDashboardInsights, type JobMatch, type TrendSkillItem, type PeerInsight } from "@/lib/api";
+import {
+  getDashboardInsights,
+  getResumeDetails,
+  getMyJobs,
+  getSkillRoadmap,
+  triggerJobScrape,
+  type JobMatch,
+  type TrendSkillItem,
+  type PeerInsight,
+  type ScrapedJob
+} from "@/lib/api";
+import { toast } from "sonner";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,6 +51,7 @@ export interface Profile {
   education: string;
   location: string;
   hasResume: boolean;
+  parsedResume?: any;
 }
 
 export interface Notification {
@@ -168,6 +181,7 @@ const emptyProfile: Profile = {
   education: "B.Tech",
   location: "Bangalore, India",
   hasResume: false,
+  parsedResume: {},
 };
 
 const initialAntiJobs: AntiJob[] = [
@@ -262,37 +276,185 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!isAuthenticated) return;
     setInsightsLoading(true);
     try {
-      const res = await getDashboardInsights();
-      const mappedTrends = (res.trending_skills || []).map(skill => {
-        const name = skill.skill_name;
-        const lowerName = name.toLowerCase();
-        const category = lowerName.includes("react") || lowerName.includes("next") || lowerName.includes("typescript") || lowerName.includes("frontend") || lowerName.includes("tailwind") ? "Frontend"
-                       : lowerName.includes("python") || lowerName.includes("fastapi") || lowerName.includes("node") || lowerName.includes("backend") ? "Backend"
-                       : lowerName.includes("aws") || lowerName.includes("docker") || lowerName.includes("kubernetes") || lowerName.includes("cloud") ? "Cloud"
-                       : lowerName.includes("ai") || lowerName.includes("langgraph") || lowerName.includes("crewai") || lowerName.includes("mcp") || lowerName.includes("learning") ? "AI"
-                       : "Data";
-        return {
-          name,
-          popularity: skill.frequency,
-          growth: 15 + (skill.frequency % 10) * 8,
-          isUp: true,
-          category
-        } as TrendingSkill;
-      });
-      setTrendingSkills(mappedTrends);
-      setPeerInsights(res.peer_insights || []);
+      // 1. Trigger background job scraping immediately (non-blocking call to agents route)
+      triggerJobScrape().catch(err => console.warn("Background job scrape trigger failed:", err));
+
+      // 2. Fetch profile details, trends, and matched jobs concurrently to reduce roundtrips
+      const [detailsRes, insightsRes, jobsRes] = await Promise.all([
+        getResumeDetails().catch(err => { console.warn("Profile fetch failed:", err); return null; }),
+        getDashboardInsights().catch(err => { console.warn("Insights fetch failed:", err); return null; }),
+        getMyJobs().catch(err => { console.warn("Personalised jobs fetch failed:", err); return null; })
+      ]);
+
+      let userSkills: string[] = [];
+
+      // 1. Process Profile & Resume details
+      if (detailsRes) {
+        const details = detailsRes.resume_details || {};
+        userSkills = detailsRes.skills || [];
+        const eduEntry = (details.education && details.education.length > 0) ? details.education[0] : {};
+        
+        setProfile((prev) => ({
+          ...prev,
+          fullName: details.name || prev.fullName,
+          email: detailsRes.email || details.email || prev.email,
+          phone: details.phone || prev.phone,
+          skills: userSkills.length ? userSkills : prev.skills,
+          ultimateGoal: detailsRes.ultimate_goal || prev.ultimateGoal,
+          location: detailsRes.location || prev.location,
+          education: detailsRes.education || prev.education,
+          hasResume: !!detailsRes.resume_pdf_url,
+          college: eduEntry.institution || prev.college,
+          degree: eduEntry.degree || prev.degree,
+          cgpa: eduEntry.gpa || prev.cgpa,
+          parsedResume: details,
+        }));
+        if (detailsRes.resume_pdf_url) {
+          setResumeScore(84);
+        }
+      }
+
+      // 2. Process Trend insights & Peer matching
+      if (insightsRes) {
+        const mappedTrends = (insightsRes.trending_skills || []).map(skill => {
+          const name = skill.skill_name;
+          const lowerName = name.toLowerCase();
+          const category = lowerName.includes("react") || lowerName.includes("next") || lowerName.includes("typescript") || lowerName.includes("frontend") || lowerName.includes("tailwind") ? "Frontend"
+                         : lowerName.includes("python") || lowerName.includes("fastapi") || lowerName.includes("node") || lowerName.includes("backend") ? "Backend"
+                         : lowerName.includes("aws") || lowerName.includes("docker") || lowerName.includes("kubernetes") || lowerName.includes("cloud") ? "Cloud"
+                         : lowerName.includes("ai") || lowerName.includes("langgraph") || lowerName.includes("crewai") || lowerName.includes("mcp") || lowerName.includes("learning") ? "AI"
+                         : "Data";
+          return {
+            name,
+            popularity: skill.frequency,
+            growth: 15 + (skill.frequency % 10) * 8,
+            isUp: true,
+            category
+          } as TrendingSkill;
+        });
+        setTrendingSkills(mappedTrends);
+        setPeerInsights(insightsRes.peer_insights || []);
+      }
+
+      // 3. Process matched jobs
+      // NOTE: use userSkills from this invocation's detailsRes — NOT profile.skills
+      // (reading profile.skills here would create a stale-closure / dep-loop issue)
+      if (jobsRes) {
+        const skillsPool = userSkills;
+        const mappedJobs = (jobsRes.jobs || []).map((match) => {
+          const userSkillsSet = new Set(skillsPool.map((s) => s.toLowerCase().trim()));
+          const matchingSkills: string[] = [];
+          const missingSkills: string[] = [];
+
+          match.skills.forEach((skill) => {
+            const trimmed = skill.trim();
+            if (userSkillsSet.has(trimmed.toLowerCase())) {
+              matchingSkills.push(trimmed);
+            } else {
+              missingSkills.push(trimmed);
+            }
+          });
+
+          const matchScore = match.similarity_score >= 1
+            ? Math.round(match.similarity_score)
+            : Math.round(match.similarity_score * 100);
+
+          return {
+            id: match.id,
+            companyName: match.company,
+            companyLogo: match.company.toLowerCase().includes("stripe") ? "💳"
+                         : match.company.toLowerCase().includes("vercel") ? "▲"
+                         : match.company.toLowerCase().includes("linear") ? "📐"
+                         : match.company.toLowerCase().includes("perplexity") ? "🌐"
+                         : match.company.toLowerCase().includes("razorpay") ? "💳"
+                         : "💼",
+            role: match.title,
+            salary: match.salary_range || "₹12,00,000 - ₹18,00,000",
+            experience: "0 - 2 years",
+            location: match.location || "Remote",
+            postedTime: "1 day ago",
+            matchScore: matchScore || 75,
+            matchingSkills,
+            missingSkills,
+            description: match.description,
+          } as Job;
+        });
+        setJobs(mappedJobs);
+      }
+
+      // 4. Silent delayed refresh: Query jobs again after 5 seconds to load newly scraped jobs
+      setTimeout(async () => {
+        try {
+          const freshJobsRes = await getMyJobs();
+          if (freshJobsRes && freshJobsRes.jobs) {
+            const skillsPool = userSkills.length ? userSkills : profile.skills;
+            const mappedJobs = (freshJobsRes.jobs || []).map((match) => {
+              const userSkillsSet = new Set(skillsPool.map((s) => s.toLowerCase().trim()));
+              const matchingSkills: string[] = [];
+              const missingSkills: string[] = [];
+              match.skills.forEach((skill) => {
+                const trimmed = skill.trim();
+                if (userSkillsSet.has(trimmed.toLowerCase())) {
+                  matchingSkills.push(trimmed);
+                } else {
+                  missingSkills.push(trimmed);
+                }
+              });
+              const matchScore = match.similarity_score >= 1
+                ? Math.round(match.similarity_score)
+                : Math.round(match.similarity_score * 100);
+              return {
+                id: match.id,
+                companyName: match.company,
+                companyLogo: match.company.toLowerCase().includes("stripe") ? "💳"
+                             : match.company.toLowerCase().includes("vercel") ? "▲"
+                             : match.company.toLowerCase().includes("linear") ? "📐"
+                             : match.company.toLowerCase().includes("perplexity") ? "🌐"
+                             : match.company.toLowerCase().includes("razorpay") ? "💳"
+                             : "💼",
+                role: match.title,
+                salary: match.salary_range || "₹12,00,000 - ₹18,00,000",
+                experience: "0 - 2 years",
+                location: match.location || "Remote",
+                postedTime: "Just now",
+                matchScore: matchScore || 75,
+                matchingSkills,
+                missingSkills,
+                description: match.description,
+              } as Job;
+            });
+            setJobs(mappedJobs);
+            console.log("🔄 Silent refresh: Updated job list with fresh scraped jobs.");
+          }
+        } catch (pollErr) {
+          console.warn("Silent job refresh failed:", pollErr);
+        }
+      }, 5000);
+
     } catch (err) {
       console.warn("Dashboard insights fetch failed:", err);
     } finally {
       setInsightsLoading(false);
     }
+  // ✅ ONLY depend on isAuthenticated — NOT profile.skills.
+  // profile.skills is set inside this callback via setProfile(), so including it
+  // here would create an infinite loop: fetch → setProfile → new skills ref →
+  // new refreshInsights → useEffect fires → fetch again → repeat.
   }, [isAuthenticated]);
 
+
+  // Guard: only run once per auth session, not on every render
+  const hasFetchedRef = React.useRef(false);
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
       refreshInsights();
     }
+    if (!isAuthenticated) {
+      hasFetchedRef.current = false;
+    }
   }, [isAuthenticated, refreshInsights]);
+
 
   // ── Profile helpers ────────────────────────────────────────────────────────
   const updateProfile = (updates: Partial<Profile>) =>
@@ -324,93 +486,32 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const clearNotifications = () => setNotifications([]);
 
   // ── Legacy Goal Planner analyzeGoal implementation ───────────────────────
-  const analyzeGoal = (targetSkill: string) => {
-    const isMl = targetSkill.toLowerCase().includes("machine") || targetSkill.toLowerCase().includes("ml") || targetSkill.toLowerCase().includes("ai") || targetSkill.toLowerCase().includes("python") || targetSkill.toLowerCase().includes("data");
-    const isDevOps = targetSkill.toLowerCase().includes("docker") || targetSkill.toLowerCase().includes("devops") || targetSkill.toLowerCase().includes("kubernetes") || targetSkill.toLowerCase().includes("aws") || targetSkill.toLowerCase().includes("cloud");
+  // ── Standalone Skill Mastery Roadmap / Goal Planner ────────────────────────
+  const analyzeGoal = async (targetSkill: string) => {
+    if (!targetSkill || !targetSkill.trim()) return;
     
-    let requiredSkills = [
-      { name: "HTML5 & CSS Layouts", progress: 95 },
-      { name: "JavaScript / TypeScript ES6", progress: 90 },
-      { name: "React State & Props", progress: 65 },
-      { name: "Next.js Framework Concepts", progress: 40 },
-      { name: "Tailwind UI & Styling", progress: 50 }
-    ];
-
-    let learningRoadmap = [
-      { title: "Master Modern React Fundamentals", desc: "Understand hooks life cycles, custom state management, performance optimization, and context patterns.", duration: "2 weeks", completed: false },
-      { title: "Deep Dive into Next.js App Router", desc: "Learn file-based routing, Server Components, layout nesting, Suspense loading boundaries, and fetching architectures.", duration: "2 weeks", completed: false },
-      { title: "State Control & API Integrations", desc: "Configure Axios hooks, integrate API context management, and build robust error triggers.", duration: "2 weeks", completed: false },
-      { title: "Interactive Deployments", desc: "Compile production bundles, configure Vercel hostings, and complete responsive UI components.", duration: "2 weeks", completed: false }
-    ];
-
-    let weeklyPlan = [
-      { week: "Week 1: Advanced React Life Cycles", tasks: ["Build a reusable context state controller", "Create custom state validation hooks", "Refactor standard inputs to use optimized debounce handlers"] },
-      { week: "Week 2: Next.js Architecture", tasks: ["Set up Next.js app with responsive route patterns", "Configure nested layouts with loading and error boundaries", "Verify Static vs Server-side fetching configurations"] },
-      { week: "Week 3: State & REST Data Pipelines", tasks: ["Integrate context state with Axios interceptors", "Handle API load spinners and warning toasts", "Design custom layout filters matching query search parameters"] },
-      { week: "Week 4: Styling & Hosting Platforms", tasks: ["Migrate interface design grids to custom CSS variables", "Run production compilation and clear TypeScript alerts", "Deploy project to Vercel/Netlify with live domain access"] }
-    ];
-
-    let estimatedTime = "4 Weeks (Approx. 40 Hours)";
-
-    if (isMl) {
-      requiredSkills = [
-        { name: "Python / Numerical Computing", progress: 90 },
-        { name: "Machine Learning Foundations", progress: 70 },
-        { name: "Deep Learning (PyTorch)", progress: 40 },
-        { name: "SQL & Vector Databases", progress: 50 },
-        { name: "MLOps (MLflow, Docker)", progress: 20 }
-      ];
-      
-      learningRoadmap = [
-        { title: "Deep Learning Fundamentals", desc: "Study Neural Networks, backpropagation, SGD, and loss function landscapes.", duration: "3 weeks", completed: false },
-        { title: "Master PyTorch & Model Optimization", desc: "Train models, inspect gradients, save checkpoints, and run quantization.", duration: "2 weeks", completed: false },
-        { title: "Vector DBs & Prompt Engineering", desc: "Integrate FAISS, Pinecone, or pgvector for retrieval augmented generation (RAG).", duration: "1 week", completed: false },
-        { title: "Production Model Deployments", desc: "Serve models using FastAPI, containerize with Docker, and push model registries.", duration: "2 weeks", completed: false }
-      ];
-
-      weeklyPlan = [
-        { week: "Week 1: Foundations of NN", tasks: ["Derive backpropagation equations by hand", "Build a neural network with numpy from scratch", "Train on MNIST dataset and achieve > 95% test accuracy"] },
-        { week: "Week 2: Transitioning to PyTorch", tasks: ["Build PyTorch Dataset and DataLoader generators", "Train a CNN model on FashionMNIST with validation monitoring", "Implement learning rate schedulers and early stopping callbacks"] },
-        { week: "Week 3: Retrieval Pipelines (RAG)", tasks: ["Generate embeddings using OpenAI or HuggingFace transformers", "Upsert chunks into ChromaDB/Pinecone local databases", "Build search query reranker nodes and check performance"] },
-        { week: "Week 4: MLOps & API Server", tasks: ["Write FastAPI routes to load model and run real-time inference", "Measure request latency and optimize payload batching", "Write Docker build pipeline and verify container memory limits"] }
-      ];
-
-      estimatedTime = "10 Weeks (Approx. 150 Hours)";
-    } else if (isDevOps) {
-      requiredSkills = [
-        { name: "Linux Administration & Bash", progress: 80 },
-        { name: "Docker Containerization", progress: 60 },
-        { name: "CI/CD Pipeline Configurations", progress: 40 },
-        { name: "Kubernetes Orchestration", progress: 30 },
-        { name: "AWS Cloud Infrastructure", progress: 50 }
-      ];
-
-      learningRoadmap = [
-        { title: "Master Container Ecosystems", desc: "Learn Dockerfiles, volume mount points, networks, and compose environments.", duration: "2 weeks", completed: false },
-        { title: "Kubernetes Orchestration", desc: "Understand pods, deployments, services, namespaces, and configMaps.", duration: "2 weeks", completed: false },
-        { title: "CI/CD Pipeline Automations", desc: "Configure GitHub Actions, build runner tasks, and publish container images.", duration: "2 weeks", completed: false },
-        { title: "Infrastructure as Code & Cloud", desc: "Manage AWS services, deploy container tasks, and monitor CPU alarms.", duration: "2 weeks", completed: false }
-      ];
-
-      weeklyPlan = [
-        { week: "Week 1: Multi-stage Containers", tasks: ["Write optimized Dockerfiles with multi-stage builds", "Configure local network bridge mappings", "Compose Redis + Node API stacks with volume persistence"] },
-        { week: "Week 2: Kubernetes Cluster Setup", tasks: ["Set up local Minikube cluster instance", "Write deployment.yaml and service.yaml configs", "Configure rolling updates and environment secret variables"] },
-        { week: "Week 3: GitHub CI/CD Actions", tasks: ["Create workflows to build and lint codebase on push", "Configure repository secrets for DockerHub access", "Automate image builds and tags upon pull-request merges"] },
-        { week: "Week 4: Cloud Engine Deployment", tasks: ["Deploy container tasks using AWS ECS ECS-CLI", "Configure target group health-check routes", "Set up AWS CloudWatch CPU usage threshold alerts"] }
-      ];
-
-      estimatedTime = "8 Weeks (Approx. 120 Hours)";
+    const toastId = toast.loading(`Analyzing roadmap for "${targetSkill}" using trajectory agent...`);
+    try {
+      const response = await getSkillRoadmap(targetSkill.trim(), profile.skills || []);
+      if (response && response.status === "success" && response.data) {
+        setGoalData({
+          targetSkill,
+          analyzed: true,
+          estimatedTime: response.data.estimatedTime,
+          requiredSkills: response.data.requiredSkills,
+          learningRoadmap: response.data.learningRoadmap,
+          weeklyPlan: response.data.weeklyPlan,
+        });
+        toast.success(`Roadmap compiled for ${targetSkill}!`, { id: toastId });
+      } else {
+        throw new Error("Invalid response from trajectory agent");
+      }
+    } catch (err: any) {
+      console.error("Roadmap generation failed:", err);
+      toast.error(`Roadmap generation failed: ${err.message || err}`, { id: toastId });
     }
-
-    setGoalData({
-      targetSkill,
-      analyzed: true,
-      estimatedTime,
-      requiredSkills,
-      learningRoadmap,
-      weeklyPlan
-    });
   };
+
 
   // Hydrate auth state from localStorage on mount
   useEffect(() => {

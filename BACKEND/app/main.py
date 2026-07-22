@@ -1,11 +1,36 @@
+from contextlib import asynccontextmanager
+import asyncio
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import user, jobs, dashboard, resume, admin, auth
+from app.routes import user, jobs, dashboard, resume, admin, auth, agents
+
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Startup: warm the Supabase TCP connection so the first real request
+    doesn't pay the ~1.5 s cold-connect penalty.
+    """
+    try:
+        from app.database import supabase
+        await asyncio.to_thread(
+            supabase.table("jobs").select("id").limit(1).execute
+        )
+        logger.info("✅ Supabase connection warmed up on startup.")
+    except Exception as e:
+        logger.warning("Supabase warmup failed (non-fatal): %s", e)
+    yield   # app is running
+    # (nothing to clean up on shutdown)
+
 
 app = FastAPI(
     title="AI Job Automation System & Co-Pilot",
     description="Production-ready FastAPI backend with Supabase, pgvector search, and LLM Multi-Agent system.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Configure CORS Middleware
@@ -19,17 +44,18 @@ app.add_middleware(
 )
 
 # Register Routers
-app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
-app.include_router(user.router, prefix="/api/user", tags=["User"])
-app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs & Dossiers"])
+app.include_router(auth.router,      prefix="/api/auth",      tags=["Authentication"])
+app.include_router(user.router,      prefix="/api/user",      tags=["User"])
+app.include_router(jobs.router,      prefix="/api/jobs",      tags=["Jobs & Dossiers"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
-app.include_router(resume.router, prefix="/api/resume", tags=["Resume & PDF"])
-app.include_router(admin.router, prefix="/api/admin", tags=["Admin Maintenance"])
+app.include_router(resume.router,    prefix="/api/resume",    tags=["Resume & PDF"])
+app.include_router(admin.router,     prefix="/api/admin",     tags=["Admin Maintenance"])
+app.include_router(agents.router,    prefix="/api/agents",    tags=["AI Agents"])
 
 @app.get("/", tags=["Health Check"])
 def health_check():
     return {
-        "status": "healthy",
+        "status":  "healthy",
         "service": "AI Job Automation Backend",
         "version": "1.0.0"
     }
