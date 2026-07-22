@@ -76,7 +76,9 @@ export interface Job {
   matchingSkills: string[];
   missingSkills: string[];
   description: string;
+  source?: string;
 }
+
 
 export interface AntiJob {
   id: string;
@@ -377,10 +379,12 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
             matchingSkills,
             missingSkills,
             description: match.description,
+            source: match.source,
           } as Job;
         });
         setJobs(mappedJobs);
       }
+
 
       // 4. Silent delayed refresh: Query jobs again after 5 seconds to load newly scraped jobs
       setTimeout(async () => {
@@ -421,6 +425,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 matchingSkills,
                 missingSkills,
                 description: match.description,
+                source: match.source,
               } as Job;
             });
             setJobs(mappedJobs);

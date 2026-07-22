@@ -65,14 +65,19 @@ export default function DashboardPage() {
   };
 
   const handleApply = (job: Job) => {
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1500)),
-      {
-        loading: `Submitting credentials to ${job.companyName}...`,
-        success: `Application submitted for ${job.role}! Check email for next steps.`,
-        error: "Failed to apply."
-      }
-    );
+    if (job.source && (job.source.startsWith("http://") || job.source.startsWith("https://"))) {
+      toast.success(`Redirecting to application page for ${job.role}...`);
+      window.open(job.source, "_blank", "noopener,noreferrer");
+    } else {
+      toast.promise(
+        new Promise((resolve) => setTimeout(resolve, 1500)),
+        {
+          loading: `Submitting credentials to ${job.companyName}...`,
+          success: `Application submitted for ${job.role}! Check email for next steps.`,
+          error: "Failed to apply."
+        }
+      );
+    }
   };
 
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
