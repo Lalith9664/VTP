@@ -210,7 +210,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [status, setStatus] = useState<SessionContextType["status"]>("landing");
 
   // UI
-  const [theme,            setTheme]            = useState<"light" | "dark">("dark");
+  const [theme,            setTheme]            = useState<"light" | "dark">("light");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab,        setActiveTab]        = useState("dashboard");
 
