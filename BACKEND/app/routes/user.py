@@ -237,7 +237,7 @@ async def get_resume_details(
     try:
         res = await asyncio.to_thread(
             supabase.table("profiles")
-            .select("raw_resume_text, resume_pdf_url, ats_pdf_url, parsed_resume, skills, ultimate_goal, location, education")
+            .select("name, phone_number, raw_resume_text, resume_pdf_url, ats_pdf_url, parsed_resume, skills, ultimate_goal, location, education")
             .eq("id", user_id)
             .execute
         )
@@ -253,6 +253,8 @@ async def get_resume_details(
     return {
         "status": "success",
         "user_id": user_id,
+        "name": profile.get("name"),
+        "phone_number": profile.get("phone_number"),
         "resume_details": parsed,
         "raw_resume_text": profile.get("raw_resume_text", ""),
         "resume_pdf_url": profile.get("resume_pdf_url"),
@@ -280,7 +282,9 @@ async def update_goal(
         "education": profile_data.education,
         "location": profile_data.location,
         "skills": profile_data.skills,
-        "permission_to_generate_resume": profile_data.permission_to_generate_resume
+        "permission_to_generate_resume": profile_data.permission_to_generate_resume,
+        "name": profile_data.name,
+        "phone_number": profile_data.phone_number
     }
     
     # Filter out None values

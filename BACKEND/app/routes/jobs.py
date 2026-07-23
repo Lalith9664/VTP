@@ -21,6 +21,8 @@ from app.models import JobSearchQuery
 from app.utils.embeddings import get_embedding
 from app.agents.tailor_agent import generate_dossier
 from app.agents.mock_interview_agent import generate_interview_prep
+from app.agents.scraper_agent import scrape_and_enrich_jobs
+from app.agents.anit_match_agent import find_anti_matching_jobs
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -403,3 +405,39 @@ async def get_job_dossier(
     asyncio.create_task(_cache())   # fire-and-forget; don't await
 
     return {"status": "success", "source": "live_generation", "data": response_data}
+
+
+@router.get("/anti-jobs", summary="Find anti-matching jobs other than the user's role")
+async def get_anti_jobs(
+    limit: int = 3,
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["id"]
+    logger.info("🚫 /api/jobs/anti-jobs called for user %s", user_id)
+    
+    # 1. Fetch user profile (skills + ultimate_goal)
+    profile_res = await _run(supabase.table("profiles").select("skills, ultimate_goal").eq("id", user_id))
+    user_skills = []
+    ultimate_goal = ""
+    if profile_res.data:
+        user_skills = profile_res.data[0].get("skills") or []
+        ultimate_goal = profile_res.data[0].get("ultimate_goal") or ""
+        
+    # 2. Fetch latest active jobs
+    jobs_res = await _run(
+        supabase.table("jobs")
+        .select("id, title, company, description, skills")
+        .eq("is_scam", False)
+        .limit(50)
+    )
+    all_jobs = jobs_res.data or []
+    
+    # 3. Use Agent 3 (anit_match_agent) tool to compute the anti-match list
+    anti_matches = find_anti_matching_jobs(
+        user_skills=user_skills,
+        ultimate_goal=ultimate_goal,
+        all_jobs=all_jobs,
+        limit=limit
+    )
+    
+    return {"status": "success", "jobs": anti_matches}

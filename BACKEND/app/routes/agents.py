@@ -125,13 +125,13 @@ async def evaluate_career_trajectory(
     user's declared long-term career goal.
 
     Scoring guide:
-    - 80–100 → Directly builds critical skills for the goal
-    - 50–79  → Builds adjacent / transferable skills
-    - 0–49   → Unrelated or a step backward
+    - 80-100 → Directly builds critical skills for the goal
+    - 50-79  → Builds adjacent / transferable skills
+    - 0-49   → Unrelated or a step backward
 
     Returns:
-        score     – int (0-100)
-        reasoning – one-sentence explanation
+        score      int (0-100)
+        reasoning  one-sentence explanation
     """
     logger.info("🎯 /api/agents/trajectory called by user %s", current_user["id"])
     result = await evaluate_trajectory(

@@ -7,6 +7,8 @@ class UserProfileUpdate(BaseModel):
     location: Optional[str] = None
     skills: Optional[List[str]] = Field(default_factory=list)
     permission_to_generate_resume: bool = False
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
 
 class BaseResumeGenerationRequest(BaseModel):
     permission_to_generate_resume: bool = True

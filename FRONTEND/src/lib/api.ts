@@ -75,6 +75,8 @@ export interface UserProfileUpdate {
   location?: string;
   skills?: string[];
   permission_to_generate_resume?: boolean;
+  name?: string;
+  phone_number?: string;
 }
 
 // ─── Core fetch helper ───────────────────────────────────────────────────────
@@ -289,6 +291,8 @@ export interface AnalyzeResumeResponse {
 export interface ResumeDetailsResponse {
   status: string;
   user_id: string;
+  name: string | null;
+  phone_number: string | null;
   resume_details: ResumeDetails;
   raw_resume_text: string;
   resume_pdf_url: string | null;
@@ -415,6 +419,18 @@ export async function triggerJobScrape(
 }
 
 
+
+
+/**
+ * GET /api/jobs/anti-jobs
+ * Returns anti-matching jobs (role mismatch, low fit scores).
+ */
+export async function getAntiJobs(
+  limit = 3,
+  signal?: AbortSignal
+): Promise<{ status: string; jobs: any[] }> {
+  return apiFetch(`/jobs/anti-jobs?limit=${limit}`, { signal });
+}
 
 
 // ─── Default Export for Axios-like backwards compatibility ──────────────────

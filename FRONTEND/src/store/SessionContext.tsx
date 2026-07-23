@@ -19,6 +19,7 @@ import {
   getMyJobs,
   getSkillRoadmap,
   triggerJobScrape,
+  getAntiJobs,
   type JobMatch,
   type TrendSkillItem,
   type PeerInsight,
@@ -163,49 +164,30 @@ interface SessionContextType {
 
 const emptyProfile: Profile = {
   id: "",
-  fullName: "Lalith Kumar",
-  email: "lalith.kumar@nit.edu",
-  phone: "+91 98765 43210",
-  college: "National Institute of Technology (NIT)",
-  department: "Computer Science & Engineering",
-  degree: "B.Tech",
-  graduationYear: "2026",
-  cgpa: "9.1",
-  currentEducation: "Final Year (B.Tech)",
-  skills: ["React", "Next.js", "TypeScript", "Node.js", "Python", "FastAPI", "Git"],
-  githubUrl: "https://github.com/lalithkumar",
-  linkedinUrl: "https://linkedin.com/in/lalithkumar",
-  portfolioUrl: "https://lalithkumar.dev",
-  preferredDomain: "Full Stack Development",
-  preferredJobLocation: "Bangalore, India",
-  profilePic: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&h=256&fit=crop",
-  ultimateGoal: "Senior Full Stack Engineer",
-  education: "B.Tech",
-  location: "Bangalore, India",
+  fullName: "",
+  email: "",
+  phone: "",
+  college: "",
+  department: "",
+  degree: "",
+  graduationYear: "",
+  cgpa: "",
+  currentEducation: "",
+  skills: [],
+  githubUrl: "",
+  linkedinUrl: "",
+  portfolioUrl: "",
+  preferredDomain: "",
+  preferredJobLocation: "",
+  profilePic: "",
+  ultimateGoal: "",
+  education: "",
+  location: "",
   hasResume: false,
   parsedResume: {},
 };
 
-const initialAntiJobs: AntiJob[] = [
-  {
-    id: "anti-1",
-    companyName: "Avanse Tech",
-    role: "DevOps & Platform Engineer",
-    matchScore: 42,
-    reason: "Severe skill mismatch in infrastructure management, orchestration engines, and public cloud deployment services.",
-    missingSkills: ["Docker", "Kubernetes", "AWS", "Terraform", "CI/CD Pipeline"],
-    suggestions: ["Learn Docker basics and create simple containerized apps.", "Take an AWS practitioner certification course.", "Build a automated Github Actions CI/CD deployment script."]
-  },
-  {
-    id: "anti-2",
-    companyName: "Turing Analytics",
-    role: "Senior Data Scientist (Deep Learning)",
-    matchScore: 35,
-    reason: "Requires deep neural networks research, mathematical modelling, and extensive production PyTorch training experience.",
-    missingSkills: ["PyTorch", "TensorFlow", "Pandas", "Scikit-Learn", "Machine Learning"],
-    suggestions: ["Complete a comprehensive Python for Data Analysis course.", "Study Linear Algebra and Statistics fundamentals.", "Train basic ML models on Kaggle notebooks."]
-  }
-];
+const initialAntiJobs:AntiJob[]=[];
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
@@ -242,7 +224,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [insightsLoading, setInsightsLoading]  = useState(false);
 
   // Legacy State variables
-  const [antiJobs,        setAntiJobs]        = useState<AntiJob[]>(initialAntiJobs);
+  const [antiJobs,        setAntiJobs]        = useState<AntiJob[]>([]);
   const [goalData,        setGoalData]        = useState<GoalPlannerData | null>(null);
 
   // ── Sync theme with <html> class ──────────────────────────────────────────
@@ -256,17 +238,38 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (session?.user) {
-          setUserId(session.user.id);
+          const uid = session.user.id;
+          setUserId(uid);
           setIsAuthenticated(true);
-          setProfile((prev) => ({
-            ...prev,
-            id:    session.user.id,
-            email: session.user.email || "",
-          }));
+          
+          let cached = null;
+          if (typeof window !== "undefined") {
+            try {
+              const cachedProfile = localStorage.getItem(`vtp_profile_${uid}`);
+              if (cachedProfile) {
+                cached = JSON.parse(cachedProfile);
+              }
+            } catch (e) {
+              console.warn("Auth listener cache read failed:", e);
+            }
+          }
+
+          setProfile((prev) => {
+            const base = cached || prev;
+            return {
+              ...base,
+              id:    uid,
+              email: session.user.email || base.email || "",
+            };
+          });
         } else {
-          setUserId(null);
-          setIsAuthenticated(false);
-          setProfile(emptyProfile);
+          // Transient null session protection: only clear state if there's no auth token stored
+          const storedToken = typeof window !== "undefined" ? localStorage.getItem("vtp_access_token") : null;
+          if (!storedToken) {
+            setUserId(null);
+            setIsAuthenticated(false);
+            setProfile(emptyProfile);
+          }
         }
       }
     );
@@ -281,11 +284,12 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // 1. Trigger background job scraping immediately (non-blocking call to agents route)
       triggerJobScrape().catch(err => console.warn("Background job scrape trigger failed:", err));
 
-      // 2. Fetch profile details, trends, and matched jobs concurrently to reduce roundtrips
-      const [detailsRes, insightsRes, jobsRes] = await Promise.all([
+      // 2. Fetch profile details, trends, matched jobs, and anti-matching jobs concurrently
+      const [detailsRes, insightsRes, jobsRes, antiJobsRes] = await Promise.all([
         getResumeDetails().catch(err => { console.warn("Profile fetch failed:", err); return null; }),
         getDashboardInsights().catch(err => { console.warn("Insights fetch failed:", err); return null; }),
-        getMyJobs().catch(err => { console.warn("Personalised jobs fetch failed:", err); return null; })
+        getMyJobs().catch(err => { console.warn("Personalised jobs fetch failed:", err); return null; }),
+        getAntiJobs().catch(err => { console.warn("Anti-matching jobs fetch failed:", err); return null; })
       ]);
 
       let userSkills: string[] = [];
@@ -296,21 +300,27 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         userSkills = detailsRes.skills || [];
         const eduEntry = (details.education && details.education.length > 0) ? details.education[0] : {};
         
-        setProfile((prev) => ({
-          ...prev,
-          fullName: details.name || prev.fullName,
-          email: detailsRes.email || details.email || prev.email,
-          phone: details.phone || prev.phone,
-          skills: userSkills.length ? userSkills : prev.skills,
-          ultimateGoal: detailsRes.ultimate_goal || prev.ultimateGoal,
-          location: detailsRes.location || prev.location,
-          education: detailsRes.education || prev.education,
-          hasResume: !!detailsRes.resume_pdf_url,
-          college: eduEntry.institution || prev.college,
-          degree: eduEntry.degree || prev.degree,
-          cgpa: eduEntry.gpa || prev.cgpa,
-          parsedResume: details,
-        }));
+        setProfile((prev) => {
+          const updated = {
+            ...prev,
+            fullName: detailsRes.name || details.name || prev.fullName,
+            email: detailsRes.email || details.email || prev.email,
+            phone: detailsRes.phone_number || details.phone || prev.phone,
+            skills: userSkills.length ? userSkills : prev.skills,
+            ultimateGoal: detailsRes.ultimate_goal || prev.ultimateGoal,
+            location: detailsRes.location || prev.location,
+            education: detailsRes.education || prev.education,
+            hasResume: !!detailsRes.resume_pdf_url,
+            college: eduEntry.institution || prev.college,
+            degree: eduEntry.degree || prev.degree,
+            cgpa: eduEntry.gpa || prev.cgpa,
+            parsedResume: details,
+          };
+          if (typeof window !== "undefined" && userId) {
+            localStorage.setItem(`vtp_profile_${userId}`, JSON.stringify(updated));
+          }
+          return updated;
+        });
         if (detailsRes.resume_pdf_url) {
           setResumeScore(84);
         }
@@ -348,7 +358,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const matchingSkills: string[] = [];
           const missingSkills: string[] = [];
 
-          match.skills.forEach((skill) => {
+          (match.skills || []).forEach((skill) => {
             const trimmed = skill.trim();
             if (userSkillsSet.has(trimmed.toLowerCase())) {
               matchingSkills.push(trimmed);
@@ -383,6 +393,13 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
           } as Job;
         });
         setJobs(mappedJobs);
+        if (typeof window !== "undefined" && userId) {
+          localStorage.setItem(`vtp_cached_jobs_${userId}`, JSON.stringify(mappedJobs));
+        }
+      }
+
+      if (antiJobsRes && antiJobsRes.jobs) {
+        setAntiJobs(antiJobsRes.jobs);
       }
 
 
@@ -396,7 +413,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
               const userSkillsSet = new Set(skillsPool.map((s) => s.toLowerCase().trim()));
               const matchingSkills: string[] = [];
               const missingSkills: string[] = [];
-              match.skills.forEach((skill) => {
+              (match.skills || []).forEach((skill) => {
                 const trimmed = skill.trim();
                 if (userSkillsSet.has(trimmed.toLowerCase())) {
                   matchingSkills.push(trimmed);
@@ -429,6 +446,9 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
               } as Job;
             });
             setJobs(mappedJobs);
+            if (typeof window !== "undefined" && userId) {
+              localStorage.setItem(`vtp_cached_jobs_${userId}`, JSON.stringify(mappedJobs));
+            }
             console.log("🔄 Silent refresh: Updated job list with fresh scraped jobs.");
           }
         } catch (pollErr) {
@@ -445,7 +465,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // profile.skills is set inside this callback via setProfile(), so including it
   // here would create an infinite loop: fetch → setProfile → new skills ref →
   // new refreshInsights → useEffect fires → fetch again → repeat.
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userId]);
 
 
   // Guard: only run once per auth session, not on every render
@@ -453,12 +473,29 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     if (isAuthenticated && !hasFetchedRef.current) {
       hasFetchedRef.current = true;
+      
+      // Load cached jobs from localStorage instantly to avoid flash of loading / empty lists
+      if (typeof window !== "undefined" && userId) {
+        try {
+          const cached = localStorage.getItem(`vtp_cached_jobs_${userId}`);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setJobs(parsed);
+              console.log("⚡ Loaded cached jobs instantly:", parsed.length);
+            }
+          }
+        } catch (cacheErr) {
+          console.warn("Failed to load cached jobs:", cacheErr);
+        }
+      }
+      
       refreshInsights();
     }
     if (!isAuthenticated) {
       hasFetchedRef.current = false;
     }
-  }, [isAuthenticated, refreshInsights]);
+  }, [isAuthenticated, userId, refreshInsights]);
 
 
   // ── Profile helpers ────────────────────────────────────────────────────────
@@ -527,6 +564,18 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setUserId(storedUserId);
         setIsAuthenticated(true);
         updateProfile({ id: storedUserId });
+        
+        // Hydrate profile cache instantly
+        const cachedProfile = localStorage.getItem(`vtp_profile_${storedUserId}`);
+        if (cachedProfile) {
+          try {
+            const parsed = JSON.parse(cachedProfile);
+            setProfile(parsed);
+            console.log("⚡ Hydrated profile instantly from cache:", parsed.fullName);
+          } catch (e) {
+            console.warn("Failed to parse cached profile:", e);
+          }
+        }
       }
     }
   }, []);
@@ -542,12 +591,16 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const logout = () => {
+    if (typeof window !== "undefined" && userId) {
+      localStorage.removeItem(`vtp_profile_${userId}`);
+    }
     setUserId(null);
     setIsAuthenticated(false);
     if (typeof window !== "undefined") {
       localStorage.removeItem("vtp_access_token");
       localStorage.removeItem("vtp_user_id");
     }
+    setProfile(emptyProfile);
     supabase.auth.signOut();
   };
 

@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { useSession } from "@/store/SessionContext";
 import { FloatingLines } from "@/components/FloatingLines";
+import { updateUserProfile } from "@/lib/api";
 
 const availableAvatars = [
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&h=256&fit=crop",
@@ -115,6 +116,19 @@ export default function OnboardingPage() {
         preferredDomain,
         preferredJobLocation
       });
+
+      // Call API to save to Supabase DB profiles table
+      updateUserProfile({
+        name: fullName,
+        phone_number: phone,
+        skills: skills,
+        education: `${degree} in ${department}, ${college}`,
+        location: preferredJobLocation,
+        ultimate_goal: preferredDomain,
+      })
+      .then(() => console.log("Onboarding profile saved to Supabase!"))
+      .catch(err => console.error("Failed to save onboarding details to DB:", err));
+
       toast.success("Profile saved successfully!");
       router.push("/upload");
     }
@@ -311,6 +325,7 @@ export default function OnboardingPage() {
                       onChange={(e) => setCurrentEducation(e.target.value)}
                       className="h-11 rounded-xl px-4 text-xs font-semibold text-slate-350 neu-input border-none cursor-pointer"
                     >
+                      <option value="" disabled>Select Education Level</option>
                       <option value="Final Year (B.Tech)">Final Year Student</option>
                       <option value="Third Year (B.Tech)">Pre-Final Year Student</option>
                       <option value="Fresh Graduate">Fresh Graduate</option>
@@ -572,6 +587,7 @@ export default function OnboardingPage() {
                       onChange={(e) => setPreferredDomain(e.target.value)}
                       className="h-11 rounded-xl px-4 text-xs font-semibold text-slate-350 neu-input border-none cursor-pointer"
                     >
+                      <option value="" disabled>Select Career Domain</option>
                       <option value="Full Stack Development">Full Stack Engineering</option>
                       <option value="Frontend Development">Frontend Developer</option>
                       <option value="Machine Learning Engineering">ML / AI Engineer</option>

@@ -76,3 +76,58 @@ async def scan_job_for_toxicity(job_description: str) -> dict:
             "toxic_score": 0,
             "reason": "Safety scan temporarily unavailable. Assumed safe for demo."
         }
+
+def find_anti_matching_jobs(user_skills: list[str], ultimate_goal: str, all_jobs: list[dict], limit: int = 3) -> list[dict]:
+    """
+    Agent 3 extension: Identifies jobs completely outside the user's role/skills profile (anti-match).
+    Computes critical tech gaps and learning roadmap suggestions.
+    """
+    user_skills_lower = {s.lower().strip() for s in user_skills}
+    goal_lower = (ultimate_goal or "").lower()
+    anti_matches = []
+    
+    for job in all_jobs:
+        job_skills = job.get("skills") or []
+        job_skills_lower = {s.lower().strip() for s in job_skills}
+        
+        # Calculate overlap
+        overlap = len(job_skills_lower & user_skills_lower)
+        
+        # Check if the title belongs to the user's target domain
+        title = (job.get("title") or "").lower()
+        is_role_mismatch = True
+        if goal_lower:
+            keywords = [w for w in goal_lower.split() if len(w) > 3]
+            for kw in keywords:
+                if kw in title:
+                    is_role_mismatch = False
+                    break
+                    
+        # An anti-match has a role mismatch, required skills, and zero skill overlap
+        if is_role_mismatch and len(job_skills) > 0 and overlap == 0:
+            missing = [s for s in job_skills if s.lower().strip() not in user_skills_lower]
+            
+            # Generate custom learning roadmaps
+            suggestions = []
+            for s in missing[:3]:
+                suggestions.append(f"Learn the fundamentals of {s} through official docs or structured courses.")
+            suggestions.append("Build a small sandbox project incorporating this stack to build confidence.")
+            
+            reason = f"Role mismatch: {job.get('title')} requires specialization in {', '.join(missing[:3])} which are not in your profile."
+            
+            # Low match score representing warnings
+            match_score = 15 + (len(job_skills) % 20)
+            
+            anti_matches.append({
+                "id": str(job.get("id")),
+                "companyName": job.get("company") or "Unknown Company",
+                "role": job.get("title") or "Unknown Role",
+                "matchScore": match_score,
+                "reason": reason,
+                "missingSkills": missing,
+                "suggestions": suggestions
+            })
+            
+    # Sort to return the lowest match scores first
+    anti_matches.sort(key=lambda x: x["matchScore"])
+    return anti_matches[:limit]

@@ -16,8 +16,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, updateProfile, theme, toggleTheme } = useSession();
 
-  const [email, setEmail] = useState("lalith.kumar@nit.edu");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   
@@ -75,7 +75,7 @@ export default function LoginPage() {
 
       // Save token and user id in global session state & local storage
       login(data.access_token, data.user_id);
-      updateProfile({ email: trimmedEmail, fullName: trimmedEmail.split("@")[0] || "Lalith Kumar" });
+      updateProfile({ email: trimmedEmail, fullName: trimmedEmail.split("@")[0] || "" });
 
       toast.success(isRegistering ? "Registration successful! Welcome ✨" : "Login successful! Welcome back ✨");
       
